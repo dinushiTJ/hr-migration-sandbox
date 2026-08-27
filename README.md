@@ -12,6 +12,11 @@ generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s.
 > records and are ignored by Git; do not replace them with real HR or payroll
 > data in a public checkout. See [SECURITY.md](SECURITY.md) before publishing.
 
+GitHub Pages is configured through `.github/workflows/pages.yml`. It rebuilds
+the synthetic sources in CI, runs validation as a deployment gate, and publishes
+only the generated replay page as `index.html`. Enable **GitHub Actions** as the
+Pages source in the repository settings.
+
 ```bash
 python3 src/generate_sources.py   # build three inconsistent legacy sources
 python3 src/migrate.py            # profile, cleanse, validate, transform, load
