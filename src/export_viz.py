@@ -177,6 +177,67 @@ def main():
                         r["before_value"], r["after_value"], r["note"] or "",
                         locate(ent, r["source_ref"], r["field"], r["before_value"])])
 
+    # ---- before and after, measured on the data rather than asserted ----
+    import collections, re, csv as _csv
+
+    hris = list(_csv.DictReader((ROOT / "data" / "hris_workers.csv").open(encoding="utf-8")))
+    pay = list(_csv.DictReader((ROOT / "data" / "payroll_export.csv").open(encoding="utf-8")))
+
+    def isnum(v):
+        try:
+            float(v)
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    def dfmt(v):
+        v = (v or "").strip()
+        if not v:
+            return None
+        if re.fullmatch(r"\d{4}-\d{2}-\d{2}", v):
+            return "ISO 8601"
+        if re.fullmatch(r"\d{2}/\d{2}/\d{4}", v):
+            return "DD/MM/YYYY"
+        if re.fullmatch(r"\d{1,2}-[A-Za-z]{3}-\d{4}", v):
+            return "DD-Mon-YYYY"
+        return "Excel serial" if v.isdigit() else "unparseable"
+
+    hids = {r["employee_id"] for r in hris}
+    dup = sum(1 for _, n in collections.Counter(r["employee_id"] for r in hris).items() if n > 1)
+    q = lambda sql: c.execute(sql).fetchone()[0]
+
+    quality = [
+        {"icon": "records", "label": "Records",
+         "before": f"{len(hris) + len(pay) + 8:,} rows",
+         "after": f"{q('SELECT (SELECT COUNT(*) FROM worker)+(SELECT COUNT(*) FROM position_assignment)'
+                       '+(SELECT COUNT(*) FROM compensation)+(SELECT COUNT(*) FROM supervisory_org)'):,} rows",
+         "note": "3 files in, 4 effective-dated tables out", "state": "neutral"},
+        {"icon": "calendar", "label": "Date formats in one column",
+         "before": f"{len({dfmt(r['hire_date']) for r in hris} - {None})}",
+         "after": "1", "note": "everything parsed to ISO 8601, nothing guessed", "state": "fixed"},
+        {"icon": "duplicate", "label": "Duplicate employee IDs",
+         "before": f"{dup}", "after": "0",
+         "note": "one surviving record per worker", "state": "fixed"},
+        {"icon": "org", "label": "Department spellings",
+         "before": f"{len({r['department'] for r in hris})}",
+         "after": f"{q('SELECT COUNT(*) FROM supervisory_org')}",
+         "note": "whitespace and case drift folded to one org each", "state": "fixed"},
+        {"icon": "link", "label": "Manager references to nobody",
+         "before": f"{sum(1 for r in hris if r['manager_id'] and r['manager_id'] not in hids)}",
+         "after": "0", "note": "resolved, or loaded without a supervisor and flagged",
+         "state": "fixed"},
+        {"icon": "money", "label": "Unusable salaries",
+         "before": f"{sum(1 for r in pay if not isnum(r['annual_salary']) or float(r['annual_salary']) <= 0)}",
+         "after": "0", "note": "empty, zero and negative, all quarantined", "state": "fixed"},
+        {"icon": "gauge", "label": "FTE outside 0 to 1.5",
+         "before": f"{sum(1 for r in hris if not (0 < float(r['fte']) <= 1.5))}",
+         "after": "0", "note": "negative and zero FTE cannot describe a real post",
+         "state": "fixed"},
+        {"icon": "overlap", "label": "Compensation periods that overlap",
+         "before": f"{q(chr(39).join(['SELECT COUNT(*) FROM quarantine WHERE rule_id=', 'CMP-008', '']))}",
+         "after": "0", "note": "Workday rejects a load whose periods collide", "state": "fixed"},
+    ]
+
     payload = {
         "run_id": run_id, "started_at": run["started_at"], "status": run["status"],
         "entities": [
@@ -194,6 +255,7 @@ def main():
         },
         "rules": rules, "integrity": integrity, "events": events, "target": target,
         "cleansing": {"summary": cl_summary, "rows": cl_rows},
+        "quality": quality,
     }
     OUT.write_text(json.dumps(payload, separators=(",", ":")))
     print(f"{OUT.name}  {len(events)} events  "

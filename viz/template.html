@@ -51,8 +51,8 @@ html,body{max-width:100%; overflow-x:hidden}
 
 /* ---------- masthead ---------- */
 .mast{border-bottom:1px solid var(--line); background:var(--surface); margin-bottom:26px}
-.mast-in{max-width:1180px; margin:0 auto; padding:20px; display:flex; flex-wrap:wrap;
-  gap:18px 26px; align-items:baseline}
+.mast-in{max-width:1180px; margin:0 auto; padding:20px 74px 20px 20px; display:flex;
+  flex-wrap:wrap; gap:18px 26px; align-items:baseline; position:relative}
 .mast h1{font-size:22px; font-weight:700; letter-spacing:-.015em}
 .mast .sub{color:var(--muted); font-size:13.5px; max-width:62ch}
 .runbar{margin-left:auto; display:flex; gap:22px; align-items:baseline; flex-wrap:wrap}
@@ -347,15 +347,109 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 .flow .ok{stroke:var(--ok)} .flow .bad{stroke:var(--bad)} .flow .warn{stroke:var(--warn)}
 .flow .pipe.ok,.flow .pipe.bad,.flow .pipe.warn{opacity:1; stroke-width:2}
 .flow .t-ok{fill:var(--ok)} .flow .t-bad{fill:var(--bad)} .flow .t-warn{fill:var(--warn)}
+.flow .fic{stroke:var(--faint); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+.flow .fic.ok{stroke:var(--ok)} .flow .fic.bad{stroke:var(--bad)}
 .flow .casc{fill:none; stroke:var(--bad); stroke-width:1.5; stroke-dasharray:4 4; opacity:.85}
 .flow figcaption{font-size:12.5px; color:var(--muted); margin-top:12px; max-width:88ch;
   line-height:1.55}
 .flow figcaption b{color:var(--ink); font-weight:600}
+/* ---------- icons ---------- */
+.ic{width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:1.7;
+  stroke-linecap:round; stroke-linejoin:round; vertical-align:-3px}
+.ic.lg{width:22px; height:22px}
+
+/* ---------- before and after ---------- */
+/* Colour is load-bearing here, not decoration:
+   teal   = reached the target        red   = rejected or broken in the source
+   amber  = changed, or loaded flagged  blue = a pipeline step
+   grey   = raw, not yet judged                                             */
+.ba-head{display:grid; grid-template-columns:1fr 128px 30px 128px; gap:0 14px;
+  padding:0 0 10px; border-bottom:1px solid var(--line-strong); align-items:end}
+.ba-head .h{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; display:flex; align-items:center; gap:7px}
+.ba-head .h.b{color:var(--bad); justify-content:flex-end}
+.ba-head .h.a{color:var(--ok); justify-content:flex-end}
+.ba-row{display:grid; grid-template-columns:1fr 128px 30px 128px; gap:0 14px;
+  padding:11px 0; border-bottom:1px solid var(--line); align-items:center}
+.ba-row:last-of-type{border-bottom:0}
+.ba-what{display:flex; gap:11px; align-items:flex-start; min-width:0}
+.ba-what .ic{margin-top:2px; color:var(--chrome)}
+.ba-what .nm{font-size:13.5px; font-weight:500}
+.ba-what .nt{font-size:11.5px; color:var(--muted); line-height:1.4}
+.ba-v{font-family:"IBM Plex Mono",monospace; font-size:17px; font-weight:600; text-align:right;
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+.ba-v.b{color:var(--bad)} .ba-v.a{color:var(--ok)} .ba-v.n{color:var(--muted)}
+.ba-arrow{text-align:center; color:var(--faint); font-family:"IBM Plex Mono",monospace;
+  font-size:14px}
+@media (max-width:720px){
+  .ba-head{display:none}
+  .ba-row{grid-template-columns:1fr auto; gap:4px 10px}
+  .ba-row .ba-arrow{display:none}
+  .ba-v{font-size:15px}
+  .ba-v.b::after{content:" before"; font-size:9.5px; color:var(--faint); font-weight:400}
+  .ba-v.a::after{content:" after"; font-size:9.5px; color:var(--faint); font-weight:400}
+}
+.key{display:flex; flex-wrap:wrap; gap:6px 20px; margin-top:16px; padding-top:14px;
+  border-top:1px solid var(--line); font-size:11.5px; color:var(--muted)}
+.key div{display:flex; align-items:center; gap:7px}
+.key i{width:10px; height:10px; border-radius:2px; flex:none}
+/* ---------- production equivalents ---------- */
+/* Tool tiles are monograms, deliberately not company logos, and deliberately
+   outside the outcome palette: teal, red and amber mean loaded, rejected and
+   flagged everywhere on this page, and a tool is none of those things. */
+.tool-stage{display:grid; grid-template-columns:270px 1fr; gap:0 26px; padding:15px 0;
+  border-bottom:1px solid var(--line); align-items:start}
+.tool-stage:last-child{border-bottom:0}
+.tool-stage .lhs{display:flex; gap:11px; align-items:flex-start; min-width:0}
+.tool-stage .ic{margin-top:2px; color:var(--chrome)}
+.tool-stage .nm{font-size:13.5px; font-weight:600; display:block; margin-bottom:3px}
+.tool-stage .here{font-size:11.5px; color:var(--muted); line-height:1.45}
+.tool-stage .here b{color:var(--faint); font-weight:600; font-family:"IBM Plex Mono",monospace;
+  font-size:10px; letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:2px}
+.tools{display:flex; flex-wrap:wrap; gap:8px}
+.tool{display:inline-flex; align-items:center; gap:8px; padding:5px 11px 5px 5px;
+  border:1px solid var(--line); border-radius:999px; background:var(--surface-2);
+  font-size:12.5px; white-space:nowrap}
+.tool i{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+  border-radius:50%; background:var(--chrome-soft); color:var(--chrome); flex:none;
+  font-family:"IBM Plex Mono",monospace; font-size:9px; font-weight:600; font-style:normal;
+  letter-spacing:.02em}
+@media (max-width:720px){.tool-stage{grid-template-columns:1fr; gap:10px}}
+
+/* ---------- theme toggle ---------- */
+/* Pinned to the corner rather than sitting among the run details: it is a
+   viewer preference, not a fact about the run. */
+.theme-btn{position:absolute; top:18px; right:18px; width:34px; height:34px; padding:0;
+  display:inline-flex; align-items:center; justify-content:center; border-radius:6px;
+  border:1px solid var(--line-strong); background:var(--surface-2); color:var(--muted);
+  transition:color .12s, border-color .12s}
+.theme-btn:hover{border-color:var(--chrome); color:var(--chrome)}
+.theme-btn .ic{width:16px; height:16px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-records" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M3 9h18M3 14h18"></path></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></symbol>
+    <symbol id="i-duplicate" viewBox="0 0 24 24"><rect x="3" y="3" width="13" height="13" rx="2"></rect><rect x="8" y="8" width="13" height="13" rx="2"></rect></symbol>
+    <symbol id="i-org" viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="5" rx="1"></rect><rect x="2" y="17" width="6" height="5" rx="1"></rect><rect x="16" y="17" width="6" height="5" rx="1"></rect><path d="M12 7v5M5 17v-3h14v3"></path></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a4 4 0 0 0 6 .5l2-2a4 4 0 0 0-5.7-5.7L11 7"></path><path d="M14 11a4 4 0 0 0-6-.5l-2 2a4 4 0 0 0 5.7 5.7L13 17"></path><path d="M3 3l18 18" stroke-dasharray="2 2"></path></symbol>
+    <symbol id="i-money" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="3"></circle><path d="M6 12h.01M18 12h.01"></path></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"></path><path d="M12 18l4-5"></path></symbol>
+    <symbol id="i-overlap" viewBox="0 0 24 24"><rect x="2" y="6" width="13" height="5" rx="1.5"></rect><rect x="9" y="14" width="13" height="5" rx="1.5"></rect><path d="M12 6v13" stroke-dasharray="2 2"></path></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 1.5v3M12 19.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1.5 12h3M19.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path></symbol>
+    <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"></path><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></symbol>
+  </defs>
+</svg>
 <header class="mast">
   <div class="mast-in">
+    <button class="theme-btn" id="theme" title="Switch colour mode"
+            aria-label="Switch colour mode">
+      <svg class="ic" aria-hidden="true"><use href="#i-moon" id="theme-icon"></use></svg>
+    </button>
     <div>
       <div class="eyebrow">HR data migration sandbox</div>
       <h1>Migration Control Room</h1>
@@ -367,6 +461,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
       <div><span class="eyebrow">Started</span><span class="v" id="run-at">·</span></div>
       <div><span class="eyebrow">Status</span><span id="run-status" class="pill idle">IDLE</span></div>
       <div><span class="eyebrow">Docs</span><a class="jump" href="#docs">Documentation ↓</a></div>
+
     </div>
   </div>
 </header>
@@ -388,6 +483,28 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
     </div>
   </div>
 
+
+
+  <section class="card" style="margin-bottom:22px">
+    <div class="card-h"><h2>Before and after</h2>
+      <span class="eyebrow">measured on the data, not asserted</span></div>
+    <div class="card-b">
+      <div class="ba-head">
+        <span class="h" style="color:var(--faint)">What was measured</span>
+        <span class="h b"><svg class="ic"><use href="#i-file"></use></svg>Legacy files</span>
+        <span></span>
+        <span class="h a"><svg class="ic"><use href="#i-db"></use></svg>Target</span>
+      </div>
+      <div id="quality"></div>
+      <div class="key">
+        <div><i style="background:var(--ok)"></i>reached the target</div>
+        <div><i style="background:var(--bad)"></i>rejected, or broken in the source</div>
+        <div><i style="background:var(--warn)"></i>changed by cleansing, or loaded and flagged</div>
+        <div><i style="background:var(--chrome)"></i>a pipeline step</div>
+        <div><i style="background:var(--faint)"></i>raw, not yet judged</div>
+      </div>
+    </div>
+  </section>
 
   <section class="card" style="margin-bottom:22px">
     <div class="card-h"><h2>How a record travels</h2>
@@ -411,17 +528,17 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           </defs>
 
           <rect class="bx" x="14" y="30" width="150" height="54" rx="4"></rect>
-          <text class="lbl" x="28" y="50">HRIS CSV</text>
+          <use href="#i-file" x="26" y="40" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="50">HRIS CSV</text>
           <text class="num" x="28" y="72" id="d-hris">0</text>
           <text class="of" x="150" y="72" text-anchor="end">of 309</text>
 
           <rect class="bx" x="14" y="100" width="150" height="54" rx="4"></rect>
-          <text class="lbl" x="28" y="120">PAYROLL CSV</text>
+          <use href="#i-file" x="26" y="110" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="120">PAYROLL CSV</text>
           <text class="num" x="28" y="142" id="d-pay">0</text>
           <text class="of" x="150" y="142" text-anchor="end">of 626</text>
 
           <rect class="bx" x="14" y="170" width="150" height="54" rx="4"></rect>
-          <text class="lbl" x="28" y="190">ORG XML</text>
+          <use href="#i-org" x="26" y="180" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="190">ORG XML</text>
           <text class="num" x="28" y="212" id="d-org">0</text>
           <text class="of" x="150" y="212" text-anchor="end">of 8</text>
 
@@ -460,7 +577,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           <circle cx="684" cy="127" r="3" fill="var(--warn)"></circle>
 
           <rect class="bx-out" x="740" y="20" width="246" height="88" rx="4"></rect>
-          <text class="lbl t-ok" x="758" y="44">TARGET</text>
+          <use href="#i-db" x="756" y="33" width="14" height="14" class="fic ok"></use><text class="lbl t-ok" x="776" y="44">TARGET</text>
           <text class="num t-ok" x="758" y="72" id="d-loaded">0</text>
           <text class="of" x="968" y="72" text-anchor="end">rows loaded</text>
           <text class="of2" x="758" y="94">worker · position · compensation · org</text>
@@ -468,7 +585,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           <text class="edge t-warn" x="863" y="132" text-anchor="middle" id="d-flagged-line">flagged: 0 take both paths</text>
 
           <rect class="bx-out" x="740" y="166" width="246" height="88" rx="4"></rect>
-          <text class="lbl t-bad" x="758" y="190">QUARANTINE</text>
+          <use href="#i-overlap" x="756" y="179" width="14" height="14" class="fic bad"></use><text class="lbl t-bad" x="776" y="190">QUARANTINE</text>
           <text class="num t-bad" x="758" y="218" id="d-rejected">0</text>
           <text class="of" x="968" y="218" text-anchor="end">records held</text>
           <text class="of2" x="758" y="240">rule · key · reason · raw record</text>
@@ -589,6 +706,18 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
   </section>
 
 
+
+  <div class="sec-h">
+    <h2>Production equivalents</h2>
+    <p>What a real Workday programme uses at each step, and what stands in for it here.</p>
+  </div>
+  <section class="card">
+    <div class="card-b">
+      <p class="docs-note" id="tools-note"></p>
+      <div id="tools"></div>
+    </div>
+  </section>
+
   <div class="sec-h" id="docs">
     <h2>Validity checks</h2>
     <p>Re-derived from the database and the source files, without importing the pipeline.</p>
@@ -621,6 +750,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 
 <script>
 const RUN = __RUN_DATA__;
+const TOOLS = __TOOLS__;
 const EV = RUN.events, N = EV.length;
 const $ = id => document.getElementById(id);
 const money = c => (c/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
@@ -704,6 +834,19 @@ $("rules").innerHTML = RUN.rules.map(r => `
     <td class="ct r"><span id="rc-${r.rule_id}">0</span> <span style="color:var(--faint)">/ ${r.n}</span></td>
   </tr>
   <tr class="drawer" id="dr-${r.rule_id}" hidden><td colspan="3"><div class="drawer-in" id="di-${r.rule_id}"></div></td></tr>`).join("");
+
+/* Before and after. Rendered once: these are properties of the finished load,
+   not of the replay position, so they do not follow the scrubber. */
+$("quality").innerHTML = RUN.quality.map(r => `
+  <div class="ba-row">
+    <span class="ba-what">
+      <svg class="ic"><use href="#i-${r.icon}"></use></svg>
+      <span><span class="nm">${esc(r.label)}</span><br><span class="nt">${esc(r.note)}</span></span>
+    </span>
+    <span class="ba-v ${r.state === "neutral" ? "n" : "b"}">${esc(r.before)}</span>
+    <span class="ba-arrow">&rarr;</span>
+    <span class="ba-v ${r.state === "neutral" ? "n" : "a"}">${esc(r.after)}</span>
+  </div>`).join("");
 
 $("checks").innerHTML = Object.keys(RUN.integrity).map(k => `
   <div class="chk"><span class="nm">${k}</span>
@@ -1057,6 +1200,50 @@ document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
   renderBrowser(true);
 });
 $("search").oninput = ev => { query = ev.target.value.trim().toLowerCase(); renderBrowser(true); };
+
+/* ---- production equivalents ---- */
+$("tools-note").textContent = TOOLS.note;
+$("tools").innerHTML = TOOLS.stages.map(st => `
+  <div class="tool-stage">
+    <span class="lhs">
+      <svg class="ic"><use href="#i-${st.icon}"></use></svg>
+      <span><span class="nm">${esc(st.stage)}</span>
+        <span class="here"><b>here</b>${esc(st.here)}</span></span>
+    </span>
+    <span class="tools">${st.tools.map(t =>
+      `<span class="tool"><i>${esc(t.m)}</i>${esc(t.n)}</span>`).join("")}</span>
+  </div>`).join("");
+
+/* ---- theme ----
+   Two states, light and dark, always stamped explicitly on the root element.
+   The first visit takes its cue from the operating system so nobody is thrown
+   into the wrong one, and after that the viewer's own choice wins. It is a
+   per-viewer convenience, so localStorage is the right home for it, and every
+   access is guarded because it throws outright in some embedding contexts. */
+const THEMES = ["Light", "Dark"];
+let themeIx = 0;
+try {
+  const saved = localStorage.getItem("hrm-theme");
+  themeIx = THEMES.indexOf(saved);
+  if (themeIx < 0) throw new Error("no saved choice");
+} catch (e) {
+  themeIx = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? 1 : 0;
+}
+// the icon shows what a click switches to, which is the other one
+const THEME_ICON = {Light:"#i-moon", Dark:"#i-sun"};
+function applyTheme(){
+  const t = THEMES[themeIx];
+  if (t === "System") document.documentElement.removeAttribute("data-theme");
+  else document.documentElement.setAttribute("data-theme", t.toLowerCase());
+  $("theme-icon").setAttribute("href", THEME_ICON[t]);
+  const btn = $("theme");
+  const other = THEMES[(themeIx + 1) % THEMES.length];
+  btn.title = "Switch to " + other.toLowerCase() + " mode";
+  btn.setAttribute("aria-label", "Switch to " + other.toLowerCase() + " mode");
+  try { localStorage.setItem("hrm-theme", t); } catch (e) { /* not available */ }
+}
+$("theme").onclick = () => { themeIx = (themeIx + 1) % THEMES.length; applyTheme(); };
+applyTheme();
 
 render();
 </script>

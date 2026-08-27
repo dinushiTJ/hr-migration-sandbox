@@ -1,0 +1,37 @@
+{
+  "note": "What a real Workday HR migration uses at each step. Tool names are used nominatively; the tiles are monograms, not company logos.",
+  "stages": [
+    {"icon":"file","stage":"Extract from legacy","here":"A seeded Python generator writes CSV and XML, standing in for three source systems.",
+     "tools":[{"m":"IN","n":"Informatica"},{"m":"TL","n":"Talend"},{"m":"FV","n":"Fivetran"},{"m":"AB","n":"Airbyte"},{"m":"SF","n":"SAP SuccessFactors"},{"m":"OH","n":"Oracle HCM"},{"m":"PS","n":"PeopleSoft"}]},
+
+    {"icon":"db","stage":"Land and stage raw","here":"SQLite stg_ tables holding each source record verbatim as JSON, before any judgement.",
+     "tools":[{"m":"SN","n":"Snowflake"},{"m":"BQ","n":"BigQuery"},{"m":"DB","n":"Databricks"},{"m":"S3","n":"S3 / ADLS landing zone"},{"m":"SY","n":"Azure Synapse"}]},
+
+    {"icon":"duplicate","stage":"Cleanse and standardise","here":"Python normalisation with every changed value written to cleansing_log under a CLN rule.",
+     "tools":[{"m":"DT","n":"dbt"},{"m":"IDQ","n":"Informatica Data Quality"},{"m":"TDQ","n":"Talend Data Quality"},{"m":"AX","n":"Alteryx"},{"m":"OR","n":"OpenRefine"}]},
+
+    {"icon":"overlap","stage":"Validate and quarantine","here":"24 numbered rules; failures go to quarantine with rule id, key, reason and raw record.",
+     "tools":[{"m":"GE","n":"Great Expectations"},{"m":"SO","n":"Soda Core"},{"m":"DT","n":"dbt tests"},{"m":"MC","n":"Monte Carlo"},{"m":"CO","n":"Collibra DQ"}]},
+
+    {"icon":"calendar","stage":"Effective dating and history","here":"Hand-rolled interval logic with a real overlap check, because that is the thing being demonstrated.",
+     "tools":[{"m":"DS","n":"dbt snapshots (SCD2)"},{"m":"KB","n":"Kimball SCD loads"},{"m":"DV","n":"Data Vault satellites"}]},
+
+    {"icon":"db","stage":"Load into Workday","here":"Nothing. The target is Workday-shaped and has never been loaded into a tenant.",
+     "tools":[{"m":"EIB","n":"Workday EIB"},{"m":"IL","n":"iLoad"},{"m":"WS","n":"Workday Studio"},{"m":"CC","n":"Core Connectors"},{"m":"WWS","n":"Workday Web Services"}]},
+
+    {"icon":"records","stage":"Orchestrate","here":"Five commands run by hand, in order.",
+     "tools":[{"m":"AF","n":"Airflow"},{"m":"DG","n":"Dagster"},{"m":"PF","n":"Prefect"},{"m":"ADF","n":"Azure Data Factory"},{"m":"CM","n":"Control-M"}]},
+
+    {"icon":"money","stage":"Reconcile and report","here":"reconcile.py for the control total and integrity checks, validate.py for 30 independent invariants.",
+     "tools":[{"m":"DT","n":"dbt tests"},{"m":"PB","n":"Power BI"},{"m":"TB","n":"Tableau"},{"m":"WD","n":"Workday delivered audit reports"}]},
+
+    {"icon":"link","stage":"Govern, audit and lineage","here":"migration_run, quarantine and cleansing_log give a per-run audit trail.",
+     "tools":[{"m":"CO","n":"Collibra"},{"m":"AL","n":"Alation"},{"m":"UC","n":"Unity Catalog"},{"m":"OL","n":"OpenLineage"}]},
+
+    {"icon":"gauge","stage":"Version control and CI","here":"None. The pipeline is deterministic, which is what makes counts comparable between runs.",
+     "tools":[{"m":"GIT","n":"Git"},{"m":"GA","n":"GitHub Actions"},{"m":"AZ","n":"Azure DevOps"}]},
+
+    {"icon":"org","stage":"Test data and PII","here":"Wholly synthetic. No real people, so no masking is required.",
+     "tools":[{"m":"DX","n":"Delphix"},{"m":"TDM","n":"Informatica TDM"},{"m":"MSK","n":"Static masking"},{"m":"TN","n":"Restricted tenants"}]}
+  ]
+}

@@ -268,6 +268,40 @@ Supporting tables: `migration_run` (audit), `quarantine`, `cleansing_log`,
 
 ---
 
+## Production equivalents
+
+This is a sandbox, so every step is done in the standard library. On a real
+Workday programme each step has an established tool, and knowing which one goes
+where is most of the job. Tool names below are used descriptively; the choice
+varies by programme and by what the client already owns.
+
+<!-- TOOLS:START -->
+| Step | In this sandbox | In production |
+|---|---|---|
+| **Extract from legacy** | A seeded Python generator writes CSV and XML, standing in for three source systems. | Informatica, Talend, Fivetran, Airbyte, SAP SuccessFactors, Oracle HCM, PeopleSoft |
+| **Land and stage raw** | SQLite stg_ tables holding each source record verbatim as JSON, before any judgement. | Snowflake, BigQuery, Databricks, S3 / ADLS landing zone, Azure Synapse |
+| **Cleanse and standardise** | Python normalisation with every changed value written to cleansing_log under a CLN rule. | dbt, Informatica Data Quality, Talend Data Quality, Alteryx, OpenRefine |
+| **Validate and quarantine** | 24 numbered rules; failures go to quarantine with rule id, key, reason and raw record. | Great Expectations, Soda Core, dbt tests, Monte Carlo, Collibra DQ |
+| **Effective dating and history** | Hand-rolled interval logic with a real overlap check, because that is the thing being demonstrated. | dbt snapshots (SCD2), Kimball SCD loads, Data Vault satellites |
+| **Load into Workday** | Nothing. The target is Workday-shaped and has never been loaded into a tenant. | Workday EIB, iLoad, Workday Studio, Core Connectors, Workday Web Services |
+| **Orchestrate** | Five commands run by hand, in order. | Airflow, Dagster, Prefect, Azure Data Factory, Control-M |
+| **Reconcile and report** | reconcile.py for the control total and integrity checks, validate.py for 30 independent invariants. | dbt tests, Power BI, Tableau, Workday delivered audit reports |
+| **Govern, audit and lineage** | migration_run, quarantine and cleansing_log give a per-run audit trail. | Collibra, Alation, Unity Catalog, OpenLineage |
+| **Version control and CI** | None. The pipeline is deterministic, which is what makes counts comparable between runs. | Git, GitHub Actions, Azure DevOps |
+| **Test data and PII** | Wholly synthetic. No real people, so no masking is required. | Delphix, Informatica TDM, Static masking, Restricted tenants |
+<!-- TOOLS:END -->
+
+The table is generated from `viz/tools.json`, which is also what the page renders
+as chips, so the two cannot drift apart.
+
+The step that matters most for interview purposes is the one this project does
+not do at all: **loading into Workday**. A real conversion runs through EIB
+spreadsheets or iLoad into a series of mock-conversion tenants (commonly P1, P2,
+P3), each one reconciled and signed off by the data owners before the next.
+Everything here stops at the point where that would begin.
+
+---
+
 ## Results
 
 From a clean rebuild. These numbers are reproducible: delete `out/` and `data/`,
