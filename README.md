@@ -354,6 +354,15 @@ All four return zero:
 `src/build_viz.py` injects it into `viz/template.html` to produce a
 self-contained `out/control_room.html` (679 KB, no external assets).
 
+It opens with a flow figure of the whole pipeline: three sources, staged
+verbatim, cleansed, validated, and then either loaded or quarantined. Its counts
+are driven from the same computed state as the panels below it, so the picture
+cannot drift from the numbers, and they fill in as the run plays. The figure
+exists to show the one thing prose keeps fumbling: there are three outcomes, not
+two, and the flagged path goes to the target and to quarantine at the same time.
+The cascade edge is drawn too, since a rejected worker rejecting that worker's
+payroll rows is an arrow, not a sentence.
+
 It replays the run record by record with play, step, speed and scrub controls.
 Each record shows its raw fields, the format each date arrived in (`41022`
 tagged as an Excel serial resolving to `2010-08-22`), and the rule that accepted
@@ -390,8 +399,11 @@ record. All 848 pair (positions travel with their worker row).
   and reads back what the page would display. All four money figures, all nine
   rule counts, all entity counts and all four tab counts tie to the terminal
   report.
-- **Layout**: rendered in headless Chrome at 1400px and 820px with a probe that
-  measures every element against the page width. No element overflows.
+- **Layout**: rendered in headless Chrome at 1400px, 900px and 640px in both
+  themes, with two probes: one measuring every element against the page width,
+  one testing every pair of text boxes for intersection while accounting for
+  clipping ancestors. No overflow, no overlaps. A third probe checks that every
+  label inside the flow figure fits its box.
 - **Invariants**: `src/validate.py`, 30 checks re-derived without importing the
   pipeline. 29 pass, 1 is a known documented defect, 0 fail.
 
