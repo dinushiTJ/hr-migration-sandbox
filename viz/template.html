@@ -1,0 +1,923 @@
+<title>Migration Control Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+:root{
+  --paper:#eef1f4; --surface:#fff; --surface-2:#f7f9fa; --ink:#131820; --muted:#5b6775;
+  --faint:#8a95a3; --line:#d9e0e7; --line-strong:#c3ccd6;
+  --chrome:#2d4a7c; --chrome-soft:#e6ecf6;
+  --ok:#0f766e; --ok-soft:#dcf0ed; --bad:#b3261e; --bad-soft:#fbe4e2;
+  --warn:#b26b00; --warn-soft:#fbeed6;
+  --on-chrome:#fff;
+  --shadow:0 1px 2px rgba(19,24,32,.06),0 8px 24px -16px rgba(19,24,32,.28);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0d1117; --surface:#151b23; --surface-2:#1b222c; --ink:#e7ecf2; --muted:#98a4b3;
+  --faint:#6d7988; --line:#252d38; --line-strong:#333d4a;
+  --chrome:#8fb0e8; --chrome-soft:#1c2637;
+  --ok:#3ecfbb; --ok-soft:#123029; --bad:#ff7a6b; --bad-soft:#38191a;
+  --warn:#e8a63d; --warn-soft:#332512;
+  --on-chrome:#0d1117;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}}
+:root[data-theme="dark"]{
+  --paper:#0d1117; --surface:#151b23; --surface-2:#1b222c; --ink:#e7ecf2; --muted:#98a4b3;
+  --faint:#6d7988; --line:#252d38; --line-strong:#333d4a;
+  --chrome:#8fb0e8; --chrome-soft:#1c2637;
+  --ok:#3ecfbb; --ok-soft:#123029; --bad:#ff7a6b; --bad-soft:#38191a;
+  --warn:#e8a63d; --warn-soft:#332512;
+  --on-chrome:#0d1117;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3{font-family:Archivo,system-ui,sans-serif; text-wrap:balance; margin:0}
+.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
+.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
+.wrap{max-width:1180px; margin:0 auto; padding:0 20px 72px; min-width:0}
+html,body{max-width:100%; overflow-x:hidden}
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--faint);
+}
+#stage-phase{font-variant-numeric:tabular-nums; min-width:132px; text-align:right; flex:none}
+.bar-row .ct{min-width:92px; text-align:right}
+.shown{min-width:118px; text-align:right}
+
+/* ---------- masthead ---------- */
+.mast{border-bottom:1px solid var(--line); background:var(--surface); margin-bottom:26px}
+.mast-in{max-width:1180px; margin:0 auto; padding:20px; display:flex; flex-wrap:wrap;
+  gap:18px 26px; align-items:baseline}
+.mast h1{font-size:22px; font-weight:700; letter-spacing:-.015em}
+.mast .sub{color:var(--muted); font-size:13.5px; max-width:62ch}
+.runbar{margin-left:auto; display:flex; gap:22px; align-items:baseline; flex-wrap:wrap}
+.runbar div{display:flex; flex-direction:column; gap:2px}
+.runbar .v{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500}
+.pill{display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border-radius:3px;
+  font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.06em;
+  white-space:nowrap; flex:none; justify-content:center}
+.pill.ok{background:var(--ok-soft); color:var(--ok)}
+.pill.bad{background:var(--bad-soft); color:var(--bad)}
+.pill.warn{background:var(--warn-soft); color:var(--warn)}
+.pill.idle{background:var(--surface-2); color:var(--faint)}
+
+/* ---------- transport ---------- */
+.transport{
+  background:var(--surface); border:1px solid var(--line); border-radius:6px;
+  box-shadow:var(--shadow); padding:14px 16px; display:flex; gap:16px; align-items:center;
+  flex-wrap:wrap; margin-bottom:22px; position:sticky; top:0; z-index:20;
+}
+button{font:inherit; cursor:pointer}
+.btn{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.05em;
+  padding:8px 14px; border-radius:4px; border:1px solid var(--line-strong);
+  background:var(--surface-2); color:var(--ink); transition:background .12s,border-color .12s;
+}
+.btn:hover{border-color:var(--chrome); background:var(--chrome-soft)}
+.btn:focus-visible,input:focus-visible{outline:2px solid var(--chrome); outline-offset:2px}
+.btn.primary{background:var(--chrome); border-color:var(--chrome); color:var(--on-chrome); min-width:104px}
+.btn.primary:hover{background:var(--chrome); filter:brightness(1.08)}
+.speeds{display:flex; gap:0; border:1px solid var(--line-strong); border-radius:4px; overflow:hidden}
+.speeds button{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; padding:7px 11px; border:0;
+  background:var(--surface-2); color:var(--muted); border-right:1px solid var(--line);
+}
+.speeds button:last-child{border-right:0}
+.speeds button[aria-pressed="true"]{background:var(--chrome); color:var(--on-chrome); font-weight:600}
+.scrub{flex:1; min-width:220px; display:flex; align-items:center; gap:12px}
+input[type=range]{flex:1; accent-color:var(--chrome); height:22px}
+.progress-read{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--muted);
+  white-space:nowrap; font-variant-numeric:tabular-nums; min-width:82px; text-align:right}
+#pos{display:inline-block; min-width:3ch; text-align:right}
+
+/* ---------- grid ---------- */
+.main{display:grid; grid-template-columns:1.15fr .85fr; gap:22px; align-items:start}
+.main > *{min-width:0}
+@media (max-width:940px){.main{grid-template-columns:1fr}}
+.card{background:var(--surface); border:1px solid var(--line); border-radius:6px;
+  box-shadow:var(--shadow); overflow:hidden; min-width:0}
+.card-b{min-width:0}
+.card-h{padding:13px 16px; border-bottom:1px solid var(--line); display:flex;
+  justify-content:space-between; align-items:baseline; gap:12px; background:var(--surface-2);
+  flex-wrap:nowrap; min-height:47px}
+.card-h h2{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card-h h2{font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
+.card-b{padding:16px}
+.note{font-size:12.5px; color:var(--muted); line-height:1.5}
+
+/* ---------- record card ---------- */
+/* Every element below is pinned to a fixed size. The record under validation
+   changes shape 943 times a run -- an org carries 4 fields, a worker 10 -- and
+   letting the container follow the content makes the whole page jump on every
+   frame. */
+.stage{height:250px; display:flex; flex-direction:column; gap:12px}
+.rec{border:1px solid var(--line); border-left:3px solid var(--faint); border-radius:4px;
+  padding:12px 14px; background:var(--surface-2); flex:1; overflow-y:auto; overflow-x:hidden;
+  min-height:0; min-width:0}
+.rec.loaded{border-left-color:var(--ok)}
+.rec.rejected{border-left-color:var(--bad)}
+.rec.flagged{border-left-color:var(--warn)}
+.rec-top{display:flex; justify-content:space-between; gap:12px; align-items:baseline;
+  margin-bottom:9px; min-width:0}
+.rec-ent{flex:none}
+.rec-id{font-family:"IBM Plex Mono",monospace; font-size:15px; font-weight:600;
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.rec-ent{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
+  font-family:"IBM Plex Mono",monospace}
+.fields{display:grid; grid-template-columns:repeat(auto-fill,minmax(146px,1fr)); gap:8px 14px}
+.f{display:flex; flex-direction:column; gap:1px; min-width:0}
+.f .k{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint);
+  font-family:"IBM Plex Mono",monospace}
+.f .v{font-family:"IBM Plex Mono",monospace; font-size:12.5px; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap}
+.f .v.empty{color:var(--bad); font-style:italic}
+.tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px;
+  padding:0 5px; border-radius:2px; background:var(--chrome-soft); color:var(--chrome);
+  margin-left:5px; font-weight:600}
+.ws{background:var(--warn-soft); color:var(--warn); border-radius:2px}
+.verdict{display:flex; gap:10px; align-items:flex-start; font-size:13px; padding:9px 11px;
+  border-radius:4px; background:var(--surface); min-height:58px; flex:none}
+.verdict.loaded{background:var(--ok-soft); color:var(--ok)}
+.verdict.rejected{background:var(--bad-soft); color:var(--bad)}
+.verdict.flagged{background:var(--warn-soft); color:var(--warn)}
+.verdict .rid{font-family:"IBM Plex Mono",monospace; font-weight:600; white-space:nowrap; flex:none}
+.verdict span:last-child{min-width:0; overflow-wrap:anywhere}
+.ticker{display:flex; flex-direction:column-reverse; gap:0; height:156px; overflow:hidden;
+  border-top:1px solid var(--line); margin-top:2px; justify-content:flex-start}
+.tk{display:flex; gap:10px; align-items:center; padding:0 2px; font-size:12px;
+  border-bottom:1px solid var(--line); font-family:"IBM Plex Mono",monospace;
+  height:26px; flex:none; box-sizing:border-box}
+.tk .dot{width:6px; height:6px; border-radius:50%; flex:none}
+.tk.loaded .dot{background:var(--ok)} .tk.rejected .dot{background:var(--bad)}
+.tk.flagged .dot{background:var(--warn)}
+.tk{min-width:0}
+.tk .who{min-width:64px; flex:none} .tk .msg{color:var(--muted); overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0}
+
+/* ---------- control total ---------- */
+.ledger{display:flex; flex-direction:column; gap:0}
+.lrow{display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+  padding:9px 0; border-bottom:1px solid var(--line); flex-wrap:nowrap; min-height:38px}
+.lrow .lbl{font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap}
+.lrow .amt{font-family:"IBM Plex Mono",monospace; font-size:15px;
+  font-variant-numeric:tabular-nums; white-space:nowrap; flex:none;
+  min-width:14ch; text-align:right}
+.lrow.minus .amt{color:var(--muted)}
+.lrow.total{border-bottom:0; border-top:2px solid var(--ink); margin-top:4px; padding-top:11px}
+.lrow.total .lbl{color:var(--ink); font-weight:600; font-size:13px}
+.lrow.total{min-height:46px}
+.lrow.total .amt{font-size:20px; font-weight:600; min-width:11ch}
+.balanced .amt{color:var(--ok)}
+.bars{display:flex; flex-direction:column; gap:13px}
+.bar-row .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px}
+.bar-row .nm{font-family:"IBM Plex Mono",monospace; font-size:12.5px}
+.bar-row .ct{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted)}
+.track{height:9px; background:var(--surface-2); border:1px solid var(--line); border-radius:2px;
+  display:flex; overflow:hidden}
+.seg{height:100%; transition:width .12s linear}
+.seg.loaded{background:var(--ok)} .seg.flagged{background:var(--warn)}
+.seg.rejected{background:var(--bad)}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:12px}
+.legend span{display:flex; align-items:center; gap:6px}
+.sw{width:9px; height:9px; border-radius:2px; flex:none}
+
+/* ---------- rules ---------- */
+table{width:100%; border-collapse:collapse; font-size:13px}
+th{text-align:left; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); font-family:"IBM Plex Mono",monospace; font-weight:600;
+  padding:0 10px 7px 0; border-bottom:1px solid var(--line)}
+th.r,td.r{text-align:right; padding-right:0}
+td{padding:8px 10px 8px 0; border-bottom:1px solid var(--line); vertical-align:top}
+tr.rule{cursor:pointer}
+tr.rule:hover td{background:var(--surface-2)}
+tr.rule[aria-expanded="true"] td{background:var(--chrome-soft)}
+td.rid{font-family:"IBM Plex Mono",monospace; font-weight:600; white-space:nowrap; width:1%}
+td.why{color:var(--muted)}
+td.ct{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
+  width:1%; white-space:nowrap}
+td.ct span:first-child{display:inline-block; min-width:2.6ch; text-align:right}
+.card-b table{table-layout:fixed}
+.card-b table th:first-child,.card-b table td.rid{width:78px}
+.card-b table th.r,.card-b table td.ct{width:74px}
+.minibar{height:4px; background:var(--line); border-radius:2px; margin-top:5px; overflow:hidden}
+.minibar i{display:block; height:100%; transition:width .15s linear}
+.drawer td{background:var(--surface-2); padding:0}
+.drawer-in{padding:12px 14px; display:flex; flex-direction:column; gap:7px; max-height:290px;
+  overflow:auto}
+.qrec{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted);
+  border-left:2px solid var(--line-strong); padding-left:9px; word-break:break-word}
+.qrec b{color:var(--ink); font-weight:600}
+.disp{font-family:"IBM Plex Mono",monospace; font-size:10px; padding:1px 5px; border-radius:2px}
+.disp.rejected{background:var(--bad-soft); color:var(--bad)}
+.disp.flagged{background:var(--warn-soft); color:var(--warn)}
+
+/* ---------- integrity ---------- */
+.checks{display:flex; flex-direction:column; gap:0}
+.chk{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line)}
+.chk:last-child{border-bottom:0}
+.chk .nm{flex:1; font-size:13px}
+.chk .n{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--muted)}
+.sec-h{display:flex; align-items:baseline; gap:14px; margin:34px 0 14px}
+.sec-h h2{font-size:16px; font-weight:600; letter-spacing:-.01em}
+.sec-h p{margin:0; font-size:12.5px; color:var(--muted)}
+.foot{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px;
+  color:var(--muted); max-width:78ch}
+.foot b{color:var(--ink); font-weight:600}
+/* ---------- data browser ---------- */
+.tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); padding:0 16px;
+  background:var(--surface-2); overflow-x:auto; min-width:0}
+.tab{flex:none}
+.tab{
+  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.04em;
+  padding:11px 15px 9px; border:0; background:none; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-1px;
+}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--chrome); border-bottom-color:var(--chrome)}
+.tab .n{font-weight:400; color:var(--faint); margin-left:5px; display:inline-block;
+  min-width:3.4ch; text-align:right; font-variant-numeric:tabular-nums}
+.browser-tools{display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:13px 16px;
+  border-bottom:1px solid var(--line); min-width:0}
+.chips{display:flex; gap:0; border:1px solid var(--line-strong); border-radius:4px; overflow:hidden}
+.chip{font-family:"IBM Plex Mono",monospace; font-size:11.5px; padding:6px 11px; border:0;
+  background:var(--surface-2); color:var(--muted); border-right:1px solid var(--line)}
+.chip:last-child{border-right:0}
+.chip[aria-pressed="true"]{background:var(--chrome); color:var(--on-chrome); font-weight:600}
+.search{flex:1; min-width:170px; max-width:300px; font:inherit; font-size:13px; padding:6px 10px;
+  border:1px solid var(--line-strong); border-radius:4px; background:var(--surface);
+  color:var(--ink); font-family:"IBM Plex Mono",monospace}
+.search::placeholder{color:var(--faint)}
+.shown{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted);
+  margin-left:auto; font-variant-numeric:tabular-nums}
+.dwrap{overflow:auto; height:520px}
+table.data{font-size:12.5px; font-family:"IBM Plex Mono",monospace; min-width:100%;
+  table-layout:fixed}
+table.data td{overflow:hidden; text-overflow:ellipsis}
+table.data td:first-child,table.data th:first-child{width:132px}
+table.data th{position:sticky; top:0; background:var(--surface); z-index:1; padding:9px 12px 8px 16px;
+  white-space:nowrap; border-bottom:1px solid var(--line-strong)}
+table.data td{padding:7px 12px 7px 16px; white-space:nowrap; border-bottom:1px solid var(--line)}
+table.data tr.r{cursor:pointer}
+table.data tr.r:hover td{background:var(--surface-2)}
+table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
+.badge{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 6px;
+  border-radius:2px; letter-spacing:.04em}
+.badge.loaded{background:var(--ok-soft); color:var(--ok)}
+.badge.rejected{background:var(--bad-soft); color:var(--bad)}
+.badge.flagged{background:var(--warn-soft); color:var(--warn)}
+#bal-pill{min-width:92px} #int-pill{min-width:80px} #run-status{min-width:74px}
+.chk .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.chk .n{min-width:34px; text-align:right; flex:none}
+.chk .pill{min-width:62px}
+.arrow{color:var(--faint); padding:0 8px}
+.before-v{color:var(--muted)}
+.after-v{color:var(--ok); font-weight:500}
+.empty-state{padding:34px 16px; text-align:center; color:var(--faint); font-size:13px}
+.ba{display:grid; grid-template-columns:1fr 1fr; gap:0; background:var(--surface-2)}
+@media (max-width:700px){.ba{grid-template-columns:1fr}}
+.ba-col{padding:13px 16px; min-width:0}
+.ba-col + .ba-col{border-left:1px solid var(--line)}
+@media (max-width:700px){.ba-col + .ba-col{border-left:0; border-top:1px solid var(--line)}}
+.ba-h{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
+  font-family:"IBM Plex Mono",monospace; margin-bottom:9px}
+.ba-f{display:flex; gap:10px; padding:3px 0; font-size:12px; align-items:baseline}
+.ba-f .k{color:var(--faint); min-width:112px; flex:none}
+.ba-f .v{word-break:break-word; white-space:normal; min-width:0; overflow-wrap:anywhere}
+.ba-f.changed .v{background:var(--warn-soft); color:var(--warn); border-radius:2px; padding:0 4px}
+.ba-f.added .v{background:var(--ok-soft); color:var(--ok); border-radius:2px; padding:0 4px}
+/* ---------- documentation ---------- */
+.docs{font-size:14.5px; line-height:1.62}
+.docs > *:first-child{margin-top:0}
+.docs h1{font-size:22px; font-weight:700; letter-spacing:-.015em; margin:0 0 6px}
+.docs h2{font-size:17px; font-weight:600; margin:34px 0 10px; padding-top:16px;
+  border-top:1px solid var(--line)}
+.docs h3{font-size:14px; font-weight:600; margin:24px 0 8px; letter-spacing:.02em;
+  text-transform:uppercase; color:var(--chrome); font-family:"IBM Plex Mono",monospace}
+.docs h4{font-size:14px; font-weight:600; margin:18px 0 6px}
+.docs p{margin:0 0 11px; max-width:74ch}
+.docs ul,.docs ol{margin:0 0 12px; padding-left:22px; max-width:74ch}
+.docs li{margin-bottom:5px}
+.docs li::marker{color:var(--faint)}
+.docs strong{font-weight:600; color:var(--ink)}
+.docs code{font-family:"IBM Plex Mono",monospace; font-size:.88em; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:3px; padding:.5px 4px}
+.docs pre{background:var(--surface-2); border:1px solid var(--line); border-radius:4px;
+  padding:12px 14px; overflow-x:auto; margin:0 0 14px}
+.docs pre code{background:none; border:0; padding:0; font-size:12.5px; line-height:1.5}
+.docs hr{border:0; border-top:1px solid var(--line); margin:26px 0}
+.docs hr + h2{border-top:0; padding-top:0; margin-top:0}
+.docs table:not(:has(thead)) td:first-child{white-space:nowrap; color:var(--muted)}
+.docs .tscroll{overflow-x:auto; margin:0 0 15px; border:1px solid var(--line); border-radius:4px}
+.docs table{width:100%; border-collapse:collapse; font-size:13px; min-width:0}
+.docs th{background:var(--surface-2); padding:8px 12px; white-space:nowrap;
+  border-bottom:1px solid var(--line-strong); font-family:"IBM Plex Sans",sans-serif;
+  font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+.docs td{padding:7px 12px; border-bottom:1px solid var(--line); vertical-align:top}
+.docs tr:last-child td{border-bottom:0}
+.docs table code{white-space:nowrap}
+.checks-out{font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.75;
+  overflow-x:auto; margin:0; white-space:pre}
+.st{font-weight:600; padding:0 5px; border-radius:2px; margin-right:6px}
+.st.PASS{background:var(--ok-soft); color:var(--ok)}
+.st.FAIL{background:var(--bad-soft); color:var(--bad)}
+.st.KNOWN{background:var(--warn-soft); color:var(--warn)}
+.docs-note{font-size:12.5px; color:var(--muted); margin:0 0 16px; max-width:74ch}
+.jump{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.06em;
+  color:var(--chrome); text-decoration:none; border-bottom:1px solid transparent}
+.jump:hover{border-bottom-color:var(--chrome)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+</style>
+
+<header class="mast">
+  <div class="mast-in">
+    <div>
+      <div class="eyebrow">HR data migration sandbox</div>
+      <h1>Migration Control Room</h1>
+      <p class="sub">Replay of one full run: 943 legacy HR, payroll and org records
+        validated, mapped into a Workday-shaped target, or quarantined under a numbered rule.</p>
+    </div>
+    <div class="runbar">
+      <div><span class="eyebrow">Run</span><span class="v" id="run-id">·</span></div>
+      <div><span class="eyebrow">Started</span><span class="v" id="run-at">·</span></div>
+      <div><span class="eyebrow">Status</span><span id="run-status" class="pill idle">IDLE</span></div>
+      <div><span class="eyebrow">Docs</span><a class="jump" href="#docs">Documentation ↓</a></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="transport">
+    <button class="btn primary" id="play">▶ Run</button>
+    <button class="btn" id="step">Step</button>
+    <button class="btn" id="reset">Reset</button>
+    <div class="speeds" role="group" aria-label="Playback speed">
+      <button data-sp="3" aria-pressed="false">1×</button>
+      <button data-sp="25" aria-pressed="true">8×</button>
+      <button data-sp="120" aria-pressed="false">40×</button>
+      <button data-sp="9999" aria-pressed="false">Max</button>
+    </div>
+    <div class="scrub">
+      <input type="range" id="scrub" min="0" max="943" value="0" aria-label="Position in run">
+      <span class="progress-read"><span id="pos">0</span> / <span id="total">943</span></span>
+    </div>
+  </div>
+
+  <div class="main">
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <section class="card">
+        <div class="card-h">
+          <h2>Record under validation</h2>
+          <span class="eyebrow" id="stage-phase">waiting</span>
+        </div>
+        <div class="card-b">
+          <div class="stage" id="stage">
+            <p class="note">Press <b>Run</b> to replay the migration record by record. Each source
+              row is staged verbatim, tested against the rules in order, and then either written to
+              the target or held in quarantine with the rule that stopped it.</p>
+          </div>
+          <div class="ticker" id="ticker"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><h2>Rule ledger</h2><span class="eyebrow">click a rule to inspect records</span></div>
+        <div class="card-b">
+          <table>
+            <thead><tr><th>Rule</th><th>Reason</th><th class="r">Count</th></tr></thead>
+            <tbody id="rules"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:22px">
+      <section class="card">
+        <div class="card-h">
+          <h2>Financial control total</h2>
+          <span class="pill idle" id="bal-pill">PENDING</span>
+        </div>
+        <div class="card-b">
+          <div class="ledger">
+            <div class="lrow"><span class="lbl">Source file total</span><span class="amt num" id="m-src">0.00</span></div>
+            <div class="lrow minus"><span class="lbl">− Loaded to target</span><span class="amt num" id="m-loaded">0.00</span></div>
+            <div class="lrow minus"><span class="lbl">− Quarantined</span><span class="amt num" id="m-rej">0.00</span></div>
+            <div class="lrow total balanced"><span class="lbl">Residual</span><span class="amt num" id="m-res">0.00</span></div>
+          </div>
+          <p class="note" style="margin:14px 0 0">Row counts cannot catch a salary silently divided
+            by 12, because the row survives even though the value does not. Every pound either lands in the target or
+            is itemised in quarantine, so the residual holds at zero for the whole run.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><h2>Records by entity</h2><span class="eyebrow" id="ent-note">source → target</span></div>
+        <div class="card-b">
+          <div class="bars" id="bars"></div>
+          <div class="legend">
+            <span><i class="sw" style="background:var(--ok)"></i>Loaded</span>
+            <span><i class="sw" style="background:var(--warn)"></i>Loaded, flagged</span>
+            <span><i class="sw" style="background:var(--bad)"></i>Rejected</span>
+          </div>
+          <p class="note" style="margin:12px 0 0">Flagged records are loaded, not dropped: an org
+            with a missing parent becomes a root, a worker with an unresolvable manager loads
+            without a supervisor. Counting them as rejections would have overstated the worker
+            rejection rate at 9.4% instead of 3.9%.</p>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-h"><h2>Effective-dating integrity</h2><span class="pill idle" id="int-pill">NOT RUN</span></div>
+        <div class="card-b">
+          <div class="checks" id="checks"></div>
+          <p class="note" style="margin:13px 0 0">Run against the loaded target after the load
+            completes, not during it. Overlap is real interval comparison: 1 to 31 March and
+            15 March to 14 April have different start dates and still overlap.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+
+  <div class="sec-h">
+    <h2>Data browser</h2>
+    <p>The same records before the load, after it, and the ones that never made it,
+       filling up as the run plays.</p>
+  </div>
+  <section class="card">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tb-before" aria-selected="false" data-tab="before">Before <span class="n" id="tn-before">0</span></button>
+      <button class="tab" role="tab" id="tb-after" aria-selected="true" data-tab="after">After <span class="n" id="tn-after">0</span></button>
+      <button class="tab" role="tab" id="tb-quar" aria-selected="false" data-tab="quar">Quarantine <span class="n" id="tn-quar">0</span></button>
+      <button class="tab" role="tab" id="tb-clean" aria-selected="false" data-tab="clean">Cleansed <span class="n" id="tn-clean">0</span></button>
+    </div>
+    <div class="browser-tools">
+      <div class="chips" role="group" aria-label="Entity">
+        <button class="chip" data-ent="all" aria-pressed="true">All</button>
+        <button class="chip" data-ent="org" aria-pressed="false">Orgs</button>
+        <button class="chip" data-ent="worker" aria-pressed="false">Workers</button>
+        <button class="chip" data-ent="compensation" aria-pressed="false">Compensation</button>
+      </div>
+      <input class="search" id="search" type="search" placeholder="filter by id, name, rule…" aria-label="Filter records">
+      <span class="shown" id="shown"></span>
+    </div>
+    <div class="dwrap"><table class="data"><thead id="dhead"></thead><tbody id="dbody"></tbody></table></div>
+    <div class="empty-state" id="dempty" hidden></div>
+  </section>
+
+
+  <div class="sec-h" id="docs">
+    <h2>Validity checks</h2>
+    <p>Re-derived from the database and the source files, without importing the pipeline.</p>
+  </div>
+  <section class="card">
+    <div class="card-b">
+      <p class="docs-note">reconcile.py reports what the run did. These ask whether what it did
+        holds together, and they are written not to import the loader, so a bug shared between
+        the loader and its own reconciliation cannot hide from them. A defect already documented
+        in the README is marked KNOWN rather than FAIL, so the harness stays usable as a gate.</p>
+      <pre class="checks-out">__VALIDATION__</pre>
+    </div>
+  </section>
+
+  <div class="sec-h">
+    <h2>Documentation</h2>
+    <p>The project README, rendered in full.</p>
+  </div>
+  <section class="card">
+    <div class="card-b"><div class="docs">__DOCS__</div></div>
+  </section>
+
+  <p class="foot"><b>What this is.</b> A replay of one deterministic run over synthetic data. The
+  counts, the money and every rejection come from the pipeline's own SQLite output, exported after
+  the run, so nothing here is re-narrated by hand. <b>What it is not.</b> the target is
+  Workday-<i>shaped</i> and has never been loaded into a Workday tenant, there is no EIB or iLoad
+  file format, no incremental or delta load, and the cleansing rules were asserted in code rather
+  than agreed with data owners.</p>
+</div>
+
+<script>
+const RUN = __RUN_DATA__;
+const EV = RUN.events, N = EV.length;
+const $ = id => document.getElementById(id);
+const money = c => (c/100).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2});
+const cents = a => Math.round((a||0)*100);
+
+/* Money is accumulated in integer cents. Summing floats would leave a residual of
+   -0.00 on a run that actually balances, which is exactly the artefact the control
+   total exists to rule out. */
+EV.forEach(e => { if (e.e === "compensation") e.c = cents(e.amt); });
+
+const ENTS = RUN.entities.map(x => ({...x, key:{supervisory_org:"org",worker:"worker",compensation:"compensation"}[x.name]}));
+const LABEL = {org:"Supervisory org", worker:"Worker", compensation:"Compensation"};
+
+/* ---- legacy date formats, detected the way parse_date() does it ---- */
+const MON = "jan feb mar apr may jun jul aug sep oct nov dec".split(" ");
+function dateFmt(v){
+  const s = (v||"").trim();
+  if (!s) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return {f:"ISO"};
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return {f:"DD/MM/YYYY"};
+  const m = s.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
+  if (m && MON.includes(m[2].toLowerCase())) return {f:"DD-Mon-YYYY"};
+  if (/^\d+$/.test(s)){
+    const d = new Date(Date.UTC(1899,11,30) + (+s)*864e5);
+    return {f:"Excel serial", iso:d.toISOString().slice(0,10)};
+  }
+  return {f:"unparseable", bad:true};
+}
+const esc = t => String(t).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+/* Whitespace and case drift is the whole point of the department field -- show it
+   rather than describing it, so "  FACILITIES " reads as different from "Facilities". */
+function showWs(v){
+  const s = String(v ?? "");
+  const m = s.match(/^(\s*)(.*?)(\s*)$/);
+  const dot = n => n ? `<i class="ws">${"·".repeat(n.length)}</i>` : "";
+  return dot(m[1]) + esc(m[2]) + dot(m[3]);
+}
+
+/* ---- state ---- */
+let pos = 0, playing = false, speed = 25, acc = 0, last = 0;
+
+function compute(n){
+  const st = {
+    ent:{}, money:{src:0,loaded:0,rej:0}, rules:{},
+  };
+  ENTS.forEach(e => st.ent[e.key] = {loaded:0, flagged:0, rejected:0, seen:0});
+  for (let i = 0; i < n; i++){
+    const e = EV[i], b = st.ent[e.e];
+    b.seen++; b[e.o]++;
+    if (e.r) st.rules[e.r] = (st.rules[e.r]||0) + 1;
+    if (e.e === "compensation"){
+      st.money.src += e.c;
+      if (e.o === "rejected") st.money.rej += e.c; else st.money.loaded += e.c;
+    }
+  }
+  return st;
+}
+
+/* ---- static scaffolding ---- */
+$("run-id").textContent = RUN.run_id;
+$("run-at").textContent = RUN.started_at.replace("T", " ");
+$("total").textContent = N;
+$("scrub").max = N;
+
+$("bars").innerHTML = ENTS.map(e => `
+  <div class="bar-row" data-k="${e.key}">
+    <div class="top"><span class="nm">${e.name}</span><span class="ct" id="ct-${e.key}">0 / ${e.source}</span></div>
+    <div class="track">
+      <i class="seg loaded" id="sg-${e.key}-loaded" style="width:0%"></i>
+      <i class="seg flagged" id="sg-${e.key}-flagged" style="width:0%"></i>
+      <i class="seg rejected" id="sg-${e.key}-rejected" style="width:0%"></i>
+    </div>
+  </div>`).join("");
+
+$("rules").innerHTML = RUN.rules.map(r => `
+  <tr class="rule" data-rid="${r.rule_id}" aria-expanded="false" tabindex="0">
+    <td class="rid" style="color:var(--${r.disposition==="REJECTED"?"bad":"warn"})">${r.rule_id}</td>
+    <td class="why">${esc(r.reason)}
+      <span class="disp ${r.disposition==="REJECTED"?"rejected":"flagged"}">${r.disposition==="REJECTED"?"rejected":"loaded, flagged"}</span>
+      <div class="minibar"><i id="mb-${r.rule_id}" style="width:0%;background:var(--${r.disposition==="REJECTED"?"bad":"warn"})"></i></div></td>
+    <td class="ct r"><span id="rc-${r.rule_id}">0</span> <span style="color:var(--faint)">/ ${r.n}</span></td>
+  </tr>
+  <tr class="drawer" id="dr-${r.rule_id}" hidden><td colspan="3"><div class="drawer-in" id="di-${r.rule_id}"></div></td></tr>`).join("");
+
+$("checks").innerHTML = Object.keys(RUN.integrity).map(k => `
+  <div class="chk"><span class="nm">${k}</span>
+    <span class="n" id="ck-${k.replace(/\W/g,"")}">·</span>
+    <span class="pill idle" id="ckp-${k.replace(/\W/g,"")}">pending</span></div>`).join("");
+
+/* ---- render ---- */
+let lastRendered = -1;
+function render(){
+  if (pos === lastRendered) return;
+  lastRendered = pos;
+  const st = compute(pos);
+
+  $("pos").textContent = pos;
+  $("scrub").value = pos;
+
+  const st8 = pos === 0 ? ["IDLE","idle"] : pos < N ? ["RUNNING","warn"] : ["SUCCESS","ok"];
+  const sp = $("run-status"); sp.textContent = st8[0]; sp.className = "pill " + st8[1];
+  $("stage-phase").textContent = pos === 0 ? "waiting" : pos < N ? `record ${pos} of ${N}` : "load complete";
+
+  $("m-src").textContent = money(st.money.src);
+  $("m-loaded").textContent = money(st.money.loaded);
+  $("m-rej").textContent = money(st.money.rej);
+  const res = st.money.src - st.money.loaded - st.money.rej;
+  $("m-res").textContent = money(res);
+  const bp = $("bal-pill");
+  bp.textContent = pos === 0 ? "PENDING" : res === 0 ? "BALANCES" : "OUT BY " + money(res);
+  bp.className = "pill " + (pos === 0 ? "idle" : res === 0 ? "ok" : "bad");
+
+  ENTS.forEach(e => {
+    const b = st.ent[e.key], tot = e.source;
+    $(`ct-${e.key}`).textContent = `${b.seen} / ${tot}`;
+    ["loaded","flagged","rejected"].forEach(o =>
+      $(`sg-${e.key}-${o}`).style.width = (b[o]/tot*100) + "%");
+  });
+
+  RUN.rules.forEach(r => {
+    const n = st.rules[r.rule_id] || 0;
+    $(`rc-${r.rule_id}`).textContent = n;
+    $(`mb-${r.rule_id}`).style.width = (n/r.n*100) + "%";
+  });
+
+  const done = pos === N;
+  $("int-pill").textContent = done ? "ALL CLEAR" : "NOT RUN";
+  $("int-pill").className = "pill " + (done ? "ok" : "idle");
+  Object.entries(RUN.integrity).forEach(([k,v]) => {
+    const id = k.replace(/\W/g,"");
+    $("ck-"+id).textContent = done ? v : "·";
+    const p = $("ckp-"+id);
+    p.textContent = done ? (v === 0 ? "ok" : "FAIL") : "pending";
+    p.className = "pill " + (done ? (v === 0 ? "ok" : "bad") : "idle");
+  });
+
+  renderStage();
+  renderTicker();
+  renderBrowser();
+}
+
+function fieldRow(k, v){
+  const empty = v === "" || v == null;
+  let extra = "", val = empty ? "&lt;empty&gt;" : esc(v);
+  if (/date|period/.test(k)){
+    const d = dateFmt(v);
+    if (d) extra = `<span class="tag" ${d.bad?'style="background:var(--bad-soft);color:var(--bad)"':""}>${d.f}${d.iso?" → "+d.iso:""}</span>`;
+  }
+  if (/department|cost_centre/.test(k)) val = showWs(v);
+  return `<div class="f"><span class="k">${esc(k.replace(/_/g," "))}</span>
+    <span class="v ${empty?"empty":""}" title="${esc(v ?? "")}">${val}${extra}</span></div>`;
+}
+
+function renderStage(){
+  const st = $("stage");
+  if (pos === 0){
+    st.innerHTML = `<p class="note">Press <b>Run</b> to replay the migration record by record.
+      Each source row is staged verbatim, tested against the rules in order, and then either
+      written to the target or held in quarantine with the rule that stopped it.</p>`;
+    return;
+  }
+  const e = EV[pos-1];
+  const verdict = e.o === "loaded"
+    ? `<div class="verdict loaded"><span class="rid">LOADED</span><span>Passed every rule for this entity. Written to the ${e.e === "compensation" ? "compensation" : e.e === "worker" ? "worker and position_assignment" : "supervisory_org"} table with its effective dates.</span></div>`
+    : `<div class="verdict ${e.o}"><span class="rid">${e.r}</span><span>${esc(e.why)}${e.o === "flagged" ? " <b>Loaded anyway</b>, with the fault recorded." : ""}</span></div>`;
+  st.innerHTML = `
+    <div class="rec ${e.o}">
+      <div class="rec-top">
+        <span class="rec-id">${esc(e.k)}${e.label ? ` <span style="font-weight:400;color:var(--muted)">${esc(e.label)}</span>` : ""}</span>
+        <span class="rec-ent">${LABEL[e.e]}</span>
+      </div>
+      <div class="fields">${Object.entries(e.raw).map(([k,v]) => fieldRow(k,v)).join("")}</div>
+    </div>${verdict}`;
+}
+
+function renderTicker(){
+  const from = Math.max(0, pos-7);
+  $("ticker").innerHTML = EV.slice(from, pos).map(e =>
+    `<div class="tk ${e.o}"><i class="dot"></i><span class="who">${esc(e.k)}</span>
+     <span class="msg">${e.o === "loaded" ? "loaded" : esc(e.r + " · " + e.why)}</span></div>`).join("");
+}
+
+/* ---- transport ---- */
+function setPlaying(p){
+  playing = p && pos < N;
+  $("play").textContent = playing ? "❚❚ Pause" : (pos >= N ? "↻ Replay" : "▶ Run");
+  if (playing){ last = performance.now(); requestAnimationFrame(tick); }
+}
+function tick(now){
+  if (!playing) return;
+  const dt = Math.min((now - last)/1000, .25); last = now;
+  acc += dt * speed;
+  const n = Math.floor(acc);
+  if (n >= 1){ acc -= n; pos = Math.min(N, pos + n); render(); }
+  if (pos >= N){ setPlaying(false); return; }
+  requestAnimationFrame(tick);
+}
+$("play").onclick = () => { if (pos >= N) pos = 0; setPlaying(!playing); render(); };
+$("step").onclick = () => { setPlaying(false); pos = Math.min(N, pos+1); render(); };
+$("reset").onclick = () => { setPlaying(false); pos = 0; acc = 0; render(); };
+$("scrub").oninput = ev => { setPlaying(false); pos = +ev.target.value; render(); };
+document.querySelectorAll(".speeds button").forEach(b => b.onclick = () => {
+  speed = +b.dataset.sp;
+  document.querySelectorAll(".speeds button").forEach(x =>
+    x.setAttribute("aria-pressed", String(x === b)));
+});
+
+/* ---- quarantine drawer ---- */
+function toggleRule(tr){
+  const rid = tr.dataset.rid, dr = $("dr-"+rid), open = tr.getAttribute("aria-expanded") === "true";
+  tr.setAttribute("aria-expanded", String(!open));
+  dr.hidden = open;
+  if (!open && !dr.dataset.filled){
+    dr.dataset.filled = "1";
+    const rows = EV.filter(e => e.r === rid);
+    $("di-"+rid).innerHTML = rows.map(e =>
+      `<div class="qrec"><b>${esc(e.k)}</b> · ${esc(e.why)}<br>${esc(JSON.stringify(e.raw))}</div>`).join("");
+  }
+}
+document.querySelectorAll("tr.rule").forEach(tr => {
+  tr.onclick = () => toggleRule(tr);
+  tr.onkeydown = ev => { if (ev.key === "Enter" || ev.key === " "){ ev.preventDefault(); toggleRule(tr); } };
+});
+
+/* ---- data browser ------------------------------------------------------
+   Three views over the same run: the source records as they arrived, the rows
+   that reached the target, and what was held back. All three respect the
+   playback position, so the target visibly fills up as the run plays. An
+   "After" row expands to the source record beside it, with every field the
+   load changed highlighted -- that pairing is what shows the cleansing rules
+   actually doing something rather than being asserted. */
+const TGT = RUN.target, CLEAN = RUN.cleansing.rows;
+/* [entity, key, rule, field, before, after, note, eventIndex] */
+const [CE,CK,CR,CF,CB,CA,CN,CI] = [0,1,2,3,4,5,6,7];
+let tab = "after", entFilter = "all", query = "";
+const ENTKEY = {supervisory_org:"org", worker:"worker", compensation:"compensation"};
+const AFTER_ROWS = Object.entries(TGT).flatMap(([name, rows]) =>
+  rows.map(t => ({...t, e:ENTKEY[name]})));
+
+const COLS = {
+  before:{
+    org:["org_id","org_name","parent_org_id","cost_centre"],
+    worker:["employee_id","first_name","last_name","hire_date","termination_date","job_title","department","manager_id","employment_type","fte"],
+    compensation:["employee_id","pay_period_start","pay_period_end","annual_salary","currency","cost_centre","pay_group"],
+  },
+  after:{
+    org:["org_id","org_name","parent_org_id","cost_centre"],
+    worker:["worker_id","effective_from","effective_to","legal_first_name","legal_last_name","employment_status","job_title","org_id","manager_worker_id","fte","employment_type"],
+    compensation:["worker_id","effective_from","effective_to","annual_amount","currency","cost_centre","pay_group"],
+  },
+};
+const cell = v => v === null || v === undefined || v === ""
+  ? '<span style="color:var(--faint)">·</span>' : esc(v);
+
+function matches(hay){ return !query || hay.toLowerCase().includes(query); }
+
+function browserRows(){
+  if (tab === "before"){
+    return EV.slice(0, pos)
+      .map((e,i) => ({e:e.e, ev:e, i}))
+      .filter(r => (entFilter === "all" || r.e === entFilter) &&
+                   matches(r.ev.k + " " + r.ev.label + " " + JSON.stringify(r.ev.raw)));
+  }
+  if (tab === "quar"){
+    return EV.slice(0, pos)
+      .map((e,i) => ({e:e.e, ev:e, i}))
+      .filter(r => r.ev.o !== "loaded" &&
+                   (entFilter === "all" || r.e === entFilter) &&
+                   matches(r.ev.k + " " + r.ev.r + " " + r.ev.why));
+  }
+  if (tab === "clean"){
+    return CLEAN.filter(r => r[CI] < pos &&
+      (entFilter === "all" || r[CE] === entFilter) &&
+      matches(r[CK] + " " + r[CR] + " " + r[CF] + " " + r[CB] + " " + r[CA]));
+  }
+  return AFTER_ROWS.filter(t => t.src < pos &&
+    (entFilter === "all" || t.e === entFilter) &&
+    matches(Object.values(t.row).join(" ")));
+}
+
+const CAP = 100;
+let browserKey = null;
+function renderBrowser(force){
+  // Playback advances 60 times a second; the table only changes when the set of
+  // processed records or the filters change.
+  const key = [tab, entFilter, query, pos].join("|");
+  if (!force && key === browserKey) return;
+  browserKey = key;
+
+  const rows = browserRows();
+  const single = entFilter !== "all" ? entFilter : null;
+  const head = $("dhead"), body = $("dbody"), empty = $("dempty");
+
+  $("tn-before").textContent = pos;
+  $("tn-after").textContent = AFTER_ROWS.filter(t => t.src < pos).length;
+  $("tn-quar").textContent = EV.slice(0, pos).filter(e => e.o !== "loaded").length;
+  $("tn-clean").textContent = CLEAN.filter(r => r[CI] < pos).length;
+
+  if (!rows.length){
+    head.innerHTML = ""; body.innerHTML = "";
+    empty.hidden = false;
+    empty.textContent = pos === 0
+      ? "Nothing loaded yet. Press Run, or drag the scrubber."
+      : "No records match this filter.";
+    $("shown").textContent = "";
+    return;
+  }
+  empty.hidden = true;
+  const shown = rows.slice(0, CAP);
+  $("shown").textContent = rows.length > CAP
+    ? `showing ${CAP} of ${rows.length}` : `${rows.length} record${rows.length===1?"":"s"}`;
+
+  /* With "All" selected the entities have different shapes, so the table falls
+     back to entity + key + summary rather than pretending to one column set. */
+  if (tab === "quar"){
+    head.innerHTML = "<tr><th>Entity</th><th>Key</th><th>Rule</th><th>Disposition</th><th>Reason</th></tr>";
+    body.innerHTML = shown.map(r => `<tr><td>${LABEL[r.e]}</td><td><b>${esc(r.ev.k)}</b></td>
+      <td style="color:var(--${r.ev.o==="rejected"?"bad":"warn"});font-weight:600">${esc(r.ev.r)}</td>
+      <td><span class="badge ${r.ev.o}">${r.ev.o==="rejected"?"REJECTED":"LOADED, FLAGGED"}</span></td>
+      <td style="white-space:normal;color:var(--muted)">${esc(r.ev.why)}</td></tr>`).join("");
+    return;
+  }
+
+  if (tab === "clean"){
+    head.innerHTML = "<tr><th>Entity</th><th>Key</th><th>Rule</th><th>Field</th><th>Before</th><th>After</th><th>What changed</th></tr>";
+    body.innerHTML = shown.map(r => `<tr>
+      <td>${LABEL[r[CE]]}</td><td><b>${esc(r[CK])}</b></td>
+      <td style="color:var(--chrome);font-weight:600">${esc(r[CR])}</td>
+      <td>${esc(r[CF]).replace(/_/g," ")}</td>
+      <td class="before-v">${r[CB] === "" ? '<span style="color:var(--faint)">empty</span>' : showWs(r[CB])}</td>
+      <td><span class="arrow">→</span><span class="after-v">${esc(r[CA])}</span></td>
+      <td style="color:var(--muted);white-space:normal">${esc(r[CN])}</td></tr>`).join("");
+    return;
+  }
+
+  if (tab === "before"){
+    const cols = single ? COLS.before[single] : null;
+    head.innerHTML = cols
+      ? `<tr>${cols.map(c => `<th>${c.replace(/_/g," ")}</th>`).join("")}<th>Outcome</th></tr>`
+      : "<tr><th>Entity</th><th>Key</th><th>Record</th><th>Outcome</th></tr>";
+    body.innerHTML = shown.map(r => {
+      const badge = `<span class="badge ${r.ev.o}">${r.ev.o.toUpperCase()}</span>`;
+      if (!cols) return `<tr><td>${LABEL[r.e]}</td><td><b>${esc(r.ev.k)}</b></td>
+        <td style="color:var(--muted);max-width:520px;overflow:hidden;text-overflow:ellipsis">${esc(JSON.stringify(r.ev.raw))}</td><td>${badge}</td></tr>`;
+      return `<tr>${cols.map(c => `<td>${c === "department" || c === "cost_centre" ? showWs(r.ev.raw[c]) : cell(r.ev.raw[c])}</td>`).join("")}<td>${badge}</td></tr>`;
+    }).join("");
+    return;
+  }
+
+  // after
+  const cols = single ? COLS.after[single] : null;
+  head.innerHTML = cols
+    ? `<tr>${cols.map(c => `<th>${c.replace(/_/g," ")}</th>`).join("")}</tr>`
+    : "<tr><th>Entity</th><th>Key</th><th>Effective from</th><th>Row</th></tr>";
+  body.innerHTML = shown.map((t, n) => {
+    const span = cols ? cols.length : 4;
+    const tds = cols
+      ? cols.map(c => `<td>${c === "annual_amount" ? Number(t.row[c]).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2}) : cell(t.row[c])}</td>`).join("")
+      : `<td>${LABEL[t.e]}</td><td><b>${esc(t.row.worker_id ?? t.row.org_id)}</b></td>
+         <td>${cell(t.row.effective_from)}</td>
+         <td style="color:var(--muted);max-width:460px;overflow:hidden;text-overflow:ellipsis">${esc(JSON.stringify(t.row))}</td>`;
+    return `<tr class="r" data-n="${n}" aria-expanded="false">${tds}</tr>
+      <tr hidden id="ba-${n}"><td colspan="${span}" style="padding:0"></td></tr>`;
+  }).join("");
+
+  // The before/after panel is built on first open, not for every visible row:
+  // rendering 100 of them each frame is what makes the replay stutter at speed.
+  body.querySelectorAll("tr.r").forEach(tr => {
+    tr.onclick = () => {
+      const n = tr.dataset.n, d = $("ba-" + n), was = tr.getAttribute("aria-expanded") === "true";
+      tr.setAttribute("aria-expanded", String(!was));
+      d.hidden = was;
+      if (!was && !d.dataset.filled){
+        d.dataset.filled = "1";
+        d.firstElementChild.innerHTML = beforeAfter(shown[n]);
+      }
+    };
+  });
+}
+
+/* Which target fields differ from the source value they came from. Compared as
+   trimmed, case-folded strings: the point is to show real transformation (a
+   date reformatted, whitespace stripped, a department resolved to an org id),
+   not to flag every field whose name happens to differ. */
+function beforeAfter(t){
+  const src = EV[t.src].raw, out = t.row;
+  const norm = v => String(v ?? "").trim().toLowerCase();
+  const srcVals = new Set(Object.values(src).map(norm));
+  const rows = Object.entries(out).map(([k,v]) => {
+    const cls = norm(v) === "" ? "" : srcVals.has(norm(v)) ? "" : "changed";
+     return `<div class="ba-f ${cls}"><span class="k">${esc(k.replace(/_/g," "))}</span><span class="v">${cell(v)}</span></div>`;
+  }).join("");
+  const srcRows = Object.entries(src).map(([k,v]) =>
+    `<div class="ba-f"><span class="k">${esc(k.replace(/_/g," "))}</span><span class="v">${
+      k === "department" || k === "cost_centre" ? showWs(v) : cell(v)}</span></div>`).join("");
+  const flag = EV[t.src].o === "flagged"
+    ? `<div style="margin-top:9px"><span class="badge flagged">${esc(EV[t.src].r)}</span>
+       <span style="color:var(--muted);font-size:12px"> ${esc(EV[t.src].why)}</span></div>` : "";
+  return `<div class="ba">
+    <div class="ba-col"><div class="ba-h">Source, as received</div>${srcRows}</div>
+    <div class="ba-col"><div class="ba-h">Target, as loaded <span style="color:var(--warn)">(highlighted = changed by the load)</span></div>${rows}${flag}</div>
+  </div>`;
+}
+
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+  renderBrowser(true);
+});
+document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
+  entFilter = b.dataset.ent;
+  document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  renderBrowser(true);
+});
+$("search").oninput = ev => { query = ev.target.value.trim().toLowerCase(); renderBrowser(true); };
+
+render();
+</script>

@@ -1,0 +1,20 @@
+# Generated HR/payroll extracts and migration artefacts may contain personal or
+# financial data. Keep them local unless they have passed an approved review.
+data/*.csv
+data/*.xml
+out/*
+
+# Python and local environment files
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+.env
+.env.*
+!.env.example
+
+# OS/editor files
+.DS_Store
+.idea/
+.vscode/
