@@ -35,13 +35,18 @@ jobs:
       - name: Validate migration
         run: python src/validate.py
 
-      - name: Build replay page
+      - name: Check colour contrast against WCAG AA
+        run: python src/check_contrast.py
+
+      - name: Build replay page and FAQ
         run: |
           python src/reconcile.py
           python src/export_viz.py
           python src/build_viz.py
+          python src/build_faq.py
           mkdir -p _site
           cp out/control_room.html _site/index.html
+          cp out/faq.html _site/faq.html
 
       - name: Configure Pages
         uses: actions/configure-pages@v5

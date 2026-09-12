@@ -12,10 +12,14 @@ generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s.
 > records and are ignored by Git; do not replace them with real HR or payroll
 > data in a public checkout. See [SECURITY.md](SECURITY.md) before publishing.
 
+**New here?** The [FAQ](FAQ.md) explains what this project does and why in plain English,
+with no technical background assumed. It is also published as a page at
+[dinushitj.github.io/hr-migration-sandbox/faq.html](https://dinushitj.github.io/hr-migration-sandbox/faq.html).
+
 GitHub Pages is configured through `.github/workflows/pages.yml`. It rebuilds
 the synthetic sources in CI, runs validation as a deployment gate, and publishes
-only the generated replay page as `index.html`. Enable **GitHub Actions** as the
-Pages source in the repository settings.
+the generated replay page as `index.html` and the rendered FAQ as `faq.html`.
+Enable **GitHub Actions** as the Pages source in the repository settings.
 
 ```bash
 python3 src/generate_sources.py   # build three inconsistent legacy sources
@@ -32,7 +36,7 @@ python3 src/export_viz.py         # export the completed run as JSON
 python3 src/build_viz.py          # render out/control_room.html
 ```
 
-### At a glance
+## At a glance
 
 | | |
 |---|---|
@@ -440,6 +444,11 @@ record. All 848 pair (positions travel with their worker row).
   label inside the flow figure fits its box.
 - **Invariants**: `src/validate.py`, 30 checks re-derived without importing the
   pipeline. 29 pass, 1 is a known documented defect, 0 fail.
+- **Contrast**: `src/check_contrast.py` reads the theme tokens out of the template
+  and computes all 42 foreground and background pairs across both themes against
+  the WCAG AA 4.5:1 threshold. It runs in CI as a deployment gate. Two tokens
+  failed when this was first measured; see
+  [the accessibility review](docs/accessibility-review.md).
 
 One bug this caught: the export's raw-record join marked *both* copies of the
 byte-identical duplicate `E00075` as rejected, over-counting rejections by one
@@ -532,12 +541,15 @@ src/validate.py           independent validity checks
 src/markdown_lite.py      minimal Markdown renderer for the docs on the page
 src/export_viz.py         export a completed run to JSON
 src/build_viz.py          render the visual replay
+src/build_faq.py          render FAQ.md as a standalone accessible page
 sql/schema.sql            staging, target, audit and quarantine tables
 viz/template.html         replay page template
+FAQ.md                    plain-English FAQ, also published as faq.html
+docs/                     design notes and the accessibility review
 data/                     generated sources
-out/                      SQLite target, run.json, control_room.html
+out/                      SQLite target, run.json, control_room.html, faq.html
 ```
 
 Artefact sizes: `hris_workers.csv` 23 KB, `payroll_export.csv` 37 KB,
-`org_hierarchy.xml` 1 KB, `hr_migration.db` 644 KB, `run.json` 635 KB,
-`control_room.html` 679 KB.
+`org_hierarchy.xml` 1 KB, `hr_migration.db` 648 KB, `run.json` 637 KB,
+`control_room.html` 744 KB, `faq.html` 8 KB.
