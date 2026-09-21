@@ -68,6 +68,11 @@ def render(md):
             i += 1
             continue
 
+        if re.fullmatch(r"</?details>|<summary>.*</summary>", line.strip()):  # collapsible section
+            out.append(line.strip())
+            i += 1
+            continue
+
         m = re.match(r"(#{1,4})\s+(.*)", line)            # heading
         if m:
             lvl = len(m.group(1))
@@ -118,6 +123,7 @@ def render(md):
             return (not ln.strip()
                     or ln.startswith(("|", "#", "```"))
                     or re.fullmatch(r"-{3,}", ln.strip())
+                    or re.fullmatch(r"</?details>|<summary>.*</summary>", ln.strip())
                     or re.match(r"^\s*[-*]\s+", ln)
                     or re.match(r"^\s*\d+\.\s+", ln))
 

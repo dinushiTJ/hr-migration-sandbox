@@ -274,6 +274,9 @@ Supporting tables: `migration_run` (audit), `quarantine`, `cleansing_log`,
 
 ## Production equivalents
 
+<details>
+<summary>Show what a real Workday programme uses at each step (tool names are illustrative of the industry, not claimed as tools I've used)</summary>
+
 This is a sandbox, so every step is done in the standard library. On a real
 Workday programme each step has an established tool, and knowing which one goes
 where is most of the job. Tool names below are used descriptively; the choice
@@ -303,6 +306,8 @@ not do at all: **loading into Workday**. A real conversion runs through EIB
 spreadsheets or iLoad into a series of mock-conversion tenants (commonly P1, P2,
 P3), each one reconciled and signed off by the data owners before the next.
 Everything here stops at the point where that would begin.
+
+</details>
 
 ---
 

@@ -339,6 +339,12 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 .jump{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.06em;
   color:var(--chrome); text-decoration:none; border-bottom:1px solid transparent}
 .jump:hover{border-bottom-color:var(--chrome)}
+.tools-details summary{cursor:pointer; font-weight:600; font-size:14px; color:var(--chrome);
+  list-style:none; padding:2px 0}
+.tools-details summary::-webkit-details-marker{display:none}
+.tools-details summary::before{content:"▸ "; display:inline-block}
+.tools-details[open] summary::before{content:"▾ "}
+.tools-details .docs-note{margin-top:12px}
 /* ---------- flow figure ---------- */
 .flow{margin:0}
 .flow svg{display:block; width:100%; max-width:100%; height:auto}
@@ -469,7 +475,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
       <div><span class="eyebrow">Run</span><span class="v" id="run-id">·</span></div>
       <div><span class="eyebrow">Started</span><span class="v" id="run-at">·</span></div>
       <div><span class="eyebrow">Status</span><span id="run-status" class="pill idle">IDLE</span></div>
-      <div><span class="eyebrow">Docs</span><a class="jump" href="#docs">Documentation ↓</a></div>
+      <div><span class="eyebrow">Docs</span><a class="jump" href="#docs">Documentation ↓</a> · <a class="jump" href="faq.html">FAQ</a></div>
 
     </div>
   </div>
@@ -722,8 +728,11 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
   </div>
   <section class="card">
     <div class="card-b">
-      <p class="docs-note" id="tools-note"></p>
-      <div id="tools"></div>
+      <details class="tools-details">
+        <summary>Show the tool mapping (names are illustrative of the industry, not claimed experience)</summary>
+        <p class="docs-note" id="tools-note"></p>
+        <div id="tools"></div>
+      </details>
     </div>
   </section>
 
@@ -743,7 +752,8 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 
   <div class="sec-h">
     <h2>Documentation</h2>
-    <p>The project README, rendered in full.</p>
+    <p>The project README, rendered in full. For a plain-English explanation with no code,
+      see the <a href="faq.html">FAQ</a>.</p>
   </div>
   <section class="card">
     <div class="card-b"><div class="docs">__DOCS__</div></div>
