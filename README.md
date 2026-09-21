@@ -1,27 +1,28 @@
 # HR Data Migration Sandbox
 
+[![Build and publish replay](https://github.com/dinushiTJ/hr-migration-sandbox/actions/workflows/pages.yml/badge.svg)](https://github.com/dinushiTJ/hr-migration-sandbox/actions/workflows/pages.yml)
+
+**Live replay:** [dinushitj.github.io/hr-migration-sandbox](https://dinushitj.github.io/hr-migration-sandbox/)
+
 Preparing messy legacy HR and payroll data for load into a Workday-shaped
 target: profile, cleanse, map, validate, load, reconcile.
 
 Runs on Python 3 and SQLite. No dependencies, no services, no setup. A full
 rebuild from an empty directory takes 0.17 seconds:
-generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s.
+generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s
+(validation is timed separately).
 
 > **Publication and data handling:** `src/generate_sources.py` creates synthetic
 > data only. The generated `data/` extracts and `out/` artefacts contain raw
 > records and are ignored by Git; do not replace them with real HR or payroll
 > data in a public checkout. See [SECURITY.md](SECURITY.md) before publishing.
 
-**New here?** The [FAQ](FAQ.md) explains what this project does and why in plain English,
-with no technical background assumed. It is also published as a page at
-[dinushitj.github.io/hr-migration-sandbox/faq.html](https://dinushitj.github.io/hr-migration-sandbox/faq.html).
-
 GitHub Pages is configured through `.github/workflows/pages.yml`. It rebuilds
 the synthetic sources in CI, runs validation as a deployment gate, and publishes
-the generated replay page as `index.html` and the rendered FAQ as `faq.html`.
-Enable **GitHub Actions** as the Pages source in the repository settings.
+only the generated replay page as `index.html`. Enable **GitHub Actions** as the
+Pages source in the repository settings.
 
-```bash
+```
 python3 src/generate_sources.py   # build three inconsistent legacy sources
 python3 src/migrate.py            # profile, cleanse, validate, transform, load
 python3 src/reconcile.py          # reconciliation report
@@ -31,23 +32,24 @@ python3 src/validate.py           # independent validity checks
 Two further steps build a visual replay of the run. They are optional and
 change nothing about the pipeline:
 
-```bash
+```
 python3 src/export_viz.py         # export the completed run as JSON
 python3 src/build_viz.py          # render out/control_room.html
 ```
 
-## At a glance
+### At a glance
 
-| | |
-|---|---|
-| Source records in | **943** (309 workers, 626 payroll, 8 orgs) |
-| Loaded to target | **1,145** rows (8 orgs, 297 workers, 297 positions, 543 compensation) |
-| Rejected | **95** records under 8 rules |
-| Loaded but flagged | **18** records under 2 rules |
-| Values cleansed | **1,633** under 5 rules |
-| Money reconciled | **$58,055,893.15** in, residual **0.00** |
-| Integrity checks | **4 of 4** return zero |
-| Full rebuild | **0.17s** end to end |
+|                    |                                                                       |
+| ------------------ | --------------------------------------------------------------------- |
+| Source records in  | **943** (309 workers, 626 payroll, 8 orgs)                            |
+| Loaded to target   | **1,145** rows (8 orgs, 297 workers, 297 positions, 543 compensation) |
+| Rejected           | **95** records under 7 rules                                          |
+| Loaded but flagged | **18** records under 2 rules                                          |
+| Values cleansed    | **1,633** under 5 rules                                               |
+| Money reconciled   | **$58,055,893.15** in, residual **0.00**                              |
+| Integrity checks   | **4 of 4** return zero                                                |
+| Validity checks    | **29 of 30** pass, 1 known documented defect, 0 fail                  |
+| Full rebuild       | **0.17s** end to end                                                  |
 
 ---
 
@@ -74,11 +76,11 @@ infrastructure. Specifically:
 
 Builds three files standing in for three separate legacy systems:
 
-| File | Format | Rows | Stands in for |
-|---|---|---|---|
-| `data/hris_workers.csv` | CSV | 309 | Core HR extract: names, hire and termination dates, job, department, manager, FTE |
-| `data/payroll_export.csv` | CSV | 626 | Payroll export: pay periods, annual salary, cost centre, pay group |
-| `data/org_hierarchy.xml` | XML | 8 | Org structure from a third system: supervisory orgs, parents, cost centres |
+| File                      | Format | Rows | Stands in for                                                                     |
+| ------------------------- | ------ | ---- | --------------------------------------------------------------------------------- |
+| `data/hris_workers.csv`   | CSV    | 309  | Core HR extract: names, hire and termination dates, job, department, manager, FTE |
+| `data/payroll_export.csv` | CSV    | 626  | Payroll export: pay periods, annual salary, cost centre, pay group                |
+| `data/org_hierarchy.xml`  | XML    | 8    | Org structure from a third system: supervisory orgs, parents, cost centres        |
 
 300 workers, of which 9 are duplicated to give 309 rows. The random seed is
 fixed, so every run produces identical data. Rejection counts are meaningless
@@ -87,22 +89,22 @@ if they move between runs for reasons unrelated to the rules.
 Faults are injected deliberately and at a known rate. Without them the
 rejection path never executes and the reconciliation report is a page of zeros.
 
-Two columns matter here and they are not the same number. What is *in the file*
-is not what a rule *catches*, because rules also catch knock-on damage.
+Two columns matter here and they are not the same number. What is *in the
+file* is not what a rule *catches*, because rules also catch knock-on damage.
 
-| Fault | In the file | Rule | Caught |
-|---|---|---|---|
-| Duplicate `employee_id`, conflicting job title and FTE | 9 | `WRK-002` | 9 |
-| `manager_id` pointing outside the file entirely | 9 | `WRK-010` | 17 |
-| Employees in payroll but absent from HRIS | 6 rows | `CMP-001` | 12 |
-| Pay periods beginning after termination | 41 | `CMP-007` | 41 |
-| Empty salary | 16 | `CMP-002` | 16 |
-| Zero salary | 6 | `CMP-003` | 7 |
-| Negative salary | 1 | `CMP-003` | (same rule) |
-| Department with leading or trailing whitespace | 22 | `CLN-002` | 20 |
-| Department in the wrong case | 17 | `CLN-003` | 281 |
-| FTE outside any plausible range | 3 | `WRK-008` | 3 |
-| Org whose parent is not in the file | 1 | `ORG-001` | 1 |
+| Fault                                                  | In the file | Rule      | Caught      |
+| ------------------------------------------------------ | ----------- | --------- | ----------- |
+| Duplicate `employee_id`, conflicting job title and FTE | 9           | `WRK-002` | 9           |
+| `manager_id` pointing outside the file entirely        | 9           | `WRK-010` | 17          |
+| Employees in payroll but absent from HRIS              | 6 rows      | `CMP-001` | 12          |
+| Pay periods beginning after termination                | 41          | `CMP-007` | 41          |
+| Empty salary                                           | 16          | `CMP-002` | 16          |
+| Zero salary                                            | 6           | `CMP-003` | 7           |
+| Negative salary                                        | 1           | `CMP-003` | (same rule) |
+| Department with leading or trailing whitespace         | 22          | `CLN-002` | 20          |
+| Department in the wrong case                           | 17          | `CLN-003` | 281         |
+| FTE outside any plausible range                        | 3           | `WRK-008` | 3           |
+| Org whose parent is not in the file                    | 1           | `ORG-001` | 1           |
 
 Where the two columns differ, the gap is the interesting part:
 
@@ -121,12 +123,12 @@ Where the two columns differ, the gap is the interesting part:
 
 Four date formats are mixed within single columns:
 
-| Format | `hire_date` | `pay_period_start` |
-|---|---|---|
-| ISO 8601 (`2010-03-09`) | 124 | 312 |
-| DD/MM/YYYY (`09/03/2010`) | 71 | 314 |
-| DD-Mon-YYYY (`09-Mar-2010`) | 52 | 0 |
-| Excel serial (`40246`) | 62 | 0 |
+| Format                      | `hire_date` | `pay_period_start` |
+| --------------------------- | ----------- | ------------------ |
+| ISO 8601 (`2010-03-09`)     | 124         | 312                |
+| DD/MM/YYYY (`09/03/2010`)   | 71          | 314                |
+| DD-Mon-YYYY (`09-Mar-2010`) | 52          | 0                  |
+| Excel serial (`40246`)      | 62          | 0                  |
 
 ### Stage 2: stage the raw records (`src/migrate.py`)
 
@@ -145,37 +147,37 @@ than nothing.
 Five cleansing rules, each with a stable ID, writing every changed value to
 `cleansing_log` with its before and after.
 
-| Rule | What it does | Values touched |
-|---|---|---|
-| `CLN-001` | Legacy date parsed to ISO 8601, source format recorded | 763 |
-| `CLN-002` | Leading, trailing and repeated whitespace collapsed | 68 |
-| `CLN-003` | Case standardised | 453 |
-| `CLN-004` | Department name resolved to a supervisory org | 297 |
-| `CLN-005` | Salary normalised to two decimal places | 52 |
+| Rule      | What it does                                           | Values touched |
+| --------- | ------------------------------------------------------ | -------------- |
+| `CLN-001` | Legacy date parsed to ISO 8601, source format recorded | 763            |
+| `CLN-002` | Leading, trailing and repeated whitespace collapsed    | 68             |
+| `CLN-003` | Case standardised                                      | 453            |
+| `CLN-004` | Department name resolved to a supervisory org          | 297            |
+| `CLN-005` | Salary normalised to two decimal places                | 52             |
 
 Broken down by field:
 
-| Rule | Field | Values |
-|---|---|---|
-| `CLN-001` | `pay_period_end` | 281 |
-| `CLN-001` | `pay_period_start` | 276 |
-| `CLN-001` | `hire_date` | 174 |
-| `CLN-001` | `termination_date` | 32 |
-| `CLN-002` | `cost_centre` | 48 |
-| `CLN-002` | `department` | 20 |
-| `CLN-003` | `department` | 281 |
-| `CLN-003` | `currency` | 124 |
-| `CLN-003` | `cost_centre` | 48 |
-| `CLN-004` | `department` | 297 |
-| `CLN-005` | `annual_salary` | 52 |
+| Rule      | Field              | Values |
+| --------- | ------------------ | ------ |
+| `CLN-001` | `pay_period_end`   | 281    |
+| `CLN-001` | `pay_period_start` | 276    |
+| `CLN-001` | `hire_date`        | 174    |
+| `CLN-001` | `termination_date` | 32     |
+| `CLN-002` | `cost_centre`      | 48     |
+| `CLN-002` | `department`       | 20     |
+| `CLN-003` | `department`       | 281    |
+| `CLN-003` | `currency`         | 124    |
+| `CLN-003` | `cost_centre`      | 48     |
+| `CLN-004` | `department`       | 297    |
+| `CLN-005` | `annual_salary`    | 52     |
 
 The 763 date conversions by the format they arrived in:
 
 | Source format | Converted |
-|---|---|
-| DD/MM/YYYY | 632 |
-| Excel serial | 71 |
-| DD-Mon-YYYY | 60 |
+| ------------- | --------- |
+| DD/MM/YYYY    | 632       |
+| Excel serial  | 71        |
+| DD-Mon-YYYY   | 60        |
 
 1,633 values across the run. Whitespace and case are separate rules on purpose:
 collapsing whitespace is uncontroversial, while forcing case is a
@@ -193,8 +195,9 @@ of formats so the log can never disagree with the parser.
 
 ### Stage 4: validate and load
 
-Rules are numbered by entity. Rejected records go to `quarantine` with the rule
-ID, the natural key, a human-readable reason and the original raw record.
+19 validation rules, numbered by entity (`WRK`, `CMP`, `ORG`). Rejected records
+go to `quarantine` with the rule ID, the natural key, a human-readable reason
+and the original raw record.
 
 Not every failure is a rejection. Every quarantine row carries a `disposition`
 of `REJECTED` or `LOADED_FLAGGED`, because dropping a record sometimes costs
@@ -274,29 +277,24 @@ Supporting tables: `migration_run` (audit), `quarantine`, `cleansing_log`,
 
 ## Production equivalents
 
-<details>
-<summary>Show what a real Workday programme uses at each step (tool names are illustrative of the industry, not claimed as tools I've used)</summary>
-
 This is a sandbox, so every step is done in the standard library. On a real
 Workday programme each step has an established tool, and knowing which one goes
 where is most of the job. Tool names below are used descriptively; the choice
 varies by programme and by what the client already owns.
 
-<!-- TOOLS:START -->
-| Step | In this sandbox | In production |
-|---|---|---|
-| **Extract from legacy** | A seeded Python generator writes CSV and XML, standing in for three source systems. | Informatica, Talend, Fivetran, Airbyte, SAP SuccessFactors, Oracle HCM, PeopleSoft |
-| **Land and stage raw** | SQLite stg_ tables holding each source record verbatim as JSON, before any judgement. | Snowflake, BigQuery, Databricks, S3 / ADLS landing zone, Azure Synapse |
-| **Cleanse and standardise** | Python normalisation with every changed value written to cleansing_log under a CLN rule. | dbt, Informatica Data Quality, Talend Data Quality, Alteryx, OpenRefine |
-| **Validate and quarantine** | 24 numbered rules; failures go to quarantine with rule id, key, reason and raw record. | Great Expectations, Soda Core, dbt tests, Monte Carlo, Collibra DQ |
-| **Effective dating and history** | Hand-rolled interval logic with a real overlap check, because that is the thing being demonstrated. | dbt snapshots (SCD2), Kimball SCD loads, Data Vault satellites |
-| **Load into Workday** | Nothing. The target is Workday-shaped and has never been loaded into a tenant. | Workday EIB, iLoad, Workday Studio, Core Connectors, Workday Web Services |
-| **Orchestrate** | Five commands run by hand, in order. | Airflow, Dagster, Prefect, Azure Data Factory, Control-M |
-| **Reconcile and report** | reconcile.py for the control total and integrity checks, validate.py for 30 independent invariants. | dbt tests, Power BI, Tableau, Workday delivered audit reports |
-| **Govern, audit and lineage** | migration_run, quarantine and cleansing_log give a per-run audit trail. | Collibra, Alation, Unity Catalog, OpenLineage |
-| **Version control and CI** | None. The pipeline is deterministic, which is what makes counts comparable between runs. | Git, GitHub Actions, Azure DevOps |
-| **Test data and PII** | Wholly synthetic. No real people, so no masking is required. | Delphix, Informatica TDM, Static masking, Restricted tenants |
-<!-- TOOLS:END -->
+| Step                             | In this sandbox                                                                                                    | In production                                                                      |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **Extract from legacy**          | A seeded Python generator writes CSV and XML, standing in for three source systems.                                | Informatica, Talend, Fivetran, Airbyte, SAP SuccessFactors, Oracle HCM, PeopleSoft |
+| **Land and stage raw**           | SQLite stg\_ tables holding each source record verbatim as JSON, before any judgement.                             | Snowflake, BigQuery, Databricks, S3 / ADLS landing zone, Azure Synapse             |
+| **Cleanse and standardise**      | Python normalisation with every changed value written to cleansing\_log under one of 5 CLN rules.                  | dbt, Informatica Data Quality, Talend Data Quality, Alteryx, OpenRefine            |
+| **Validate and quarantine**      | 19 numbered validation rules; failures go to quarantine with rule id, key, reason and raw record.                  | Great Expectations, Soda Core, dbt tests, Monte Carlo, Collibra DQ                 |
+| **Effective dating and history** | Hand-rolled interval logic with a real overlap check, because that is the thing being demonstrated.                | dbt snapshots (SCD2), Kimball SCD loads, Data Vault satellites                     |
+| **Load into Workday**            | Nothing. The target is Workday-shaped and has never been loaded into a tenant.                                     | Workday EIB, iLoad, Workday Studio, Core Connectors, Workday Web Services          |
+| **Orchestrate**                  | Six commands run in order: four for the pipeline, two for the replay. CI runs them in sequence.                    | Airflow, Dagster, Prefect, Azure Data Factory, Control-M                           |
+| **Reconcile and report**         | reconcile.py for the control total and integrity checks, validate.py for 30 independent invariants.                | dbt tests, Power BI, Tableau, Workday delivered audit reports                      |
+| **Govern, audit and lineage**    | migration\_run, quarantine and cleansing\_log give a per-run audit trail.                                          | Collibra, Alation, Unity Catalog, OpenLineage                                      |
+| **Version control and CI**       | Git, plus a GitHub Actions workflow that rebuilds the sources, gates on validate.py and publishes the replay page. | Git, GitHub Actions, Azure DevOps                                                  |
+| **Test data and PII**            | Wholly synthetic. No real people, so no masking is required.                                                       | Delphix, Informatica TDM, Static masking, Restricted tenants                       |
 
 The table is generated from `viz/tools.json`, which is also what the page renders
 as chips, so the two cannot drift apart.
@@ -307,8 +305,6 @@ spreadsheets or iLoad into a series of mock-conversion tenants (commonly P1, P2,
 P3), each one reconciled and signed off by the data owners before the next.
 Everything here stops at the point where that would begin.
 
-</details>
-
 ---
 
 ## Results
@@ -318,11 +314,11 @@ re-run, and they are identical.
 
 ### Records
 
-| Entity | Source | Loaded | Rejected | Flagged | Rejection rate |
-|---|---|---|---|---|---|
-| `supervisory_org` | 8 | 8 | 0 | 1 | 0.0% |
-| `worker` | 309 | 297 | 12 | 17 | 3.9% |
-| `compensation` | 626 | 543 | 83 | 0 | 13.3% |
+| Entity            | Source | Loaded | Rejected | Flagged | Rejection rate |
+| ----------------- | ------ | ------ | -------- | ------- | -------------- |
+| `supervisory_org` | 8      | 8      | 0        | 1       | 0.0%           |
+| `worker`          | 309    | 297    | 12       | 17      | 3.9%           |
+| `compensation`    | 626    | 543    | 83       | 0       | 13.3%          |
 
 Target contents: 8 orgs, 297 workers, 297 position assignments and 543
 compensation records, 1,145 rows in total.
@@ -340,23 +336,25 @@ asymmetry to point.
 
 ### Rejections by rule
 
-| Rule | Count | Disposition | Reason |
-|---|---|---|---|
-| `CMP-007` | 41 | rejected | Pay period starts after the worker's termination date |
-| `WRK-010` | 17 | loaded, flagged | `manager_id` not found among valid workers |
-| `CMP-002` | 16 | rejected | Missing or non-numeric salary |
-| `CMP-001` | 12 | rejected | Payroll record for a worker not present in the target |
-| `WRK-002` | 9 | rejected | Duplicate `employee_id`, first occurrence retained |
-| `CMP-003` | 7 | rejected | Salary must be greater than zero |
-| `CMP-008` | 7 | rejected | Compensation period overlaps an existing period |
-| `WRK-008` | 3 | rejected | FTE outside plausible range |
-| `ORG-001` | 1 | loaded, flagged | Parent org not found in source, loaded as root |
+Nine rules fire on this seed: seven reject, two load and flag.
+
+| Rule      | Count | Disposition     | Reason                                                |
+| --------- | ----- | --------------- | ----------------------------------------------------- |
+| `CMP-007` | 41    | rejected        | Pay period starts after the worker's termination date |
+| `WRK-010` | 17    | loaded, flagged | `manager_id` not found among valid workers            |
+| `CMP-002` | 16    | rejected        | Missing or non-numeric salary                         |
+| `CMP-001` | 12    | rejected        | Payroll record for a worker not present in the target |
+| `WRK-002` | 9     | rejected        | Duplicate `employee_id`, first occurrence retained    |
+| `CMP-003` | 7     | rejected        | Salary must be greater than zero                      |
+| `CMP-008` | 7     | rejected        | Compensation period overlaps an existing period       |
+| `WRK-008` | 3     | rejected        | FTE outside plausible range                           |
+| `ORG-001` | 1     | loaded, flagged | Parent org not found in source, loaded as root        |
 
 Ten further rules are implemented but do not fire on this seed: `WRK-001`,
 `WRK-003` to `WRK-007`, `WRK-009`, `CMP-004`, `CMP-005`, `CMP-006`. They cover
 missing IDs, unparseable dates, termination before hire, non-numeric FTE,
 missing names, and pay periods that are unparseable, reversed or before the
-hire date.
+hire date. Proving they fire is item 3 on the Roadmap.
 
 ### Financial control total
 
@@ -370,7 +368,7 @@ residual (source - loaded - rejected)             0.00
 
 This is the check that matters. Row counts prove nothing about whether values
 survived the transformation, because a salary silently divided by 12 leaves the
-row count identical. Every pound that entered the pipeline either landed in the
+row count identical. Every dollar that entered the pipeline either landed in the
 target or is itemised in quarantine under a numbered rule.
 
 The loaded figure is queried back out of the target rather than taken from the
@@ -395,7 +393,8 @@ All four return zero:
 
 `src/export_viz.py` exports the completed run to `out/run.json`, and
 `src/build_viz.py` injects it into `viz/template.html` to produce a
-self-contained `out/control_room.html` (679 KB, no external assets).
+self-contained `out/control_room.html` (679 KB, no external assets). CI
+publishes it as the [live replay](https://dinushitj.github.io/hr-migration-sandbox/).
 
 It opens with a flow figure of the whole pipeline: three sources, staged
 verbatim, cleansed, validated, and then either loaded or quarantined. Its counts
@@ -414,8 +413,8 @@ for the whole run.
 
 Four tabs browse the same records: **Before** (source as received), **After**
 (rows in the target, each expandable to the source record beside it with changed
-fields highlighted), **Quarantine** (all 113 held-back records), and **Cleansed**
-(all 1,633 transformations with before and after).
+fields highlighted), **Quarantine** (all 113 held-back records), and
+**Cleansed** (all 1,633 transformations with before and after).
 
 The page also carries its own documentation: this README rendered in full, and
 the live output of the validity checks, both injected at build time. The checks
@@ -449,11 +448,8 @@ record. All 848 pair (positions travel with their worker row).
   label inside the flow figure fits its box.
 - **Invariants**: `src/validate.py`, 30 checks re-derived without importing the
   pipeline. 29 pass, 1 is a known documented defect, 0 fail.
-- **Contrast**: `src/check_contrast.py` reads the theme tokens out of the template
-  and computes all 42 foreground and background pairs across both themes against
-  the WCAG AA 4.5:1 threshold. It runs in CI as a deployment gate. Two tokens
-  failed when this was first measured; see
-  [the accessibility review](docs/accessibility-review.md).
+- **Deployment gate**: the Pages workflow runs the same validation in CI and
+  refuses to publish if any check fails.
 
 One bug this caught: the export's raw-record join marked *both* copies of the
 byte-identical duplicate `E00075` as rejected, over-counting rejections by one
@@ -466,7 +462,7 @@ quarantine row once and assigns it to the trailing duplicate, matching
 ## Known issues
 
 Found by auditing the finished pipeline. They are listed because they are real,
-not because they are theoretical.
+not because they are theoretical. Each maps to a Roadmap item below.
 
 1. **The survivorship rule for duplicates is arbitrary.** The load keeps
    whichever copy appears first in the file. For the 8 duplicates that genuinely
@@ -536,25 +532,61 @@ the more convincing signal.
 
 ---
 
+## Roadmap
+
+Ordered by how much each closes the gap between what this project claims and
+what it proves. Everything stays in the standard library.
+
+1. **Worker effective dating.** Generate job changes, promotions, transfers and
+   FTE changes so workers carry multiple dated versions. Add rules for version
+   overlaps and gaps, and effective-date `supervisory_org` with a mid-history
+   reorg. Closes Known issues 7 and 9.
+2. **Control total sees unparseable money.** A lenient parser used for control
+   totals only (thousands separators, bracketed negatives, currency symbols),
+   reported as an "unparsed value" line instead of a silent zero. Closes Known
+   issue 2 and the one `KNOWN` result in `validate.py`.
+3. **Prove every rule and check can fail.** A fault-matrix fixture per rule,
+   including the ten that do not fire on this seed, and mutation tests that
+   corrupt the target and assert each integrity check catches it. Closes Known
+   issue 6.
+4. **EIB-shaped load files.** Generate Hire Employee, Change Job and Request
+   Compensation Change templates from the target, validated against a column
+   spec. The closest this can get to a tenant load without a tenant.
+5. **Mock conversion cycles.** Run-over-run diff reports, delta loads and a
+   rollback path, standing in for P1, P2 and P3.
+6. **Configurable, signed-off rules.** Survivorship strategy as configuration,
+   a separate rule for byte-identical duplicates, `CLN-005` renamed to what it
+   does, and match-only keys no longer logged as cleansing. Each rule carries an
+   owner and a status of proposed, agreed or rejected, shown on the replay page.
+   Closes Known issues 1, 3, 4, 5 and 8.
+7. **Review queue for fuzzy matches.** `difflib` matching for departments and
+   job titles, with low-confidence matches routed to a `REVIEW` disposition
+   rather than auto-resolved, and a salary outlier flag by job.
+8. **CI hardening.** A pull-request workflow running `validate.py` across a
+   Python version matrix, plus a determinism check that builds twice and diffs
+   the outputs.
+
+---
+
 ## Layout
 
 ```
-src/generate_sources.py   three inconsistent legacy sources
-src/migrate.py            stage, cleanse, validate, load
-src/reconcile.py          reconciliation report
-src/validate.py           independent validity checks
-src/markdown_lite.py      minimal Markdown renderer for the docs on the page
-src/export_viz.py         export a completed run to JSON
-src/build_viz.py          render the visual replay
-src/build_faq.py          render FAQ.md as a standalone accessible page
-sql/schema.sql            staging, target, audit and quarantine tables
-viz/template.html         replay page template
-FAQ.md                    plain-English FAQ, also published as faq.html
-docs/                     design notes and the accessibility review
-data/                     generated sources
-out/                      SQLite target, run.json, control_room.html, faq.html
+.github/workflows/pages.yml   CI: rebuild, validate as a gate, publish the replay
+src/generate_sources.py       three inconsistent legacy sources
+src/migrate.py                stage, cleanse, validate, load
+src/reconcile.py              reconciliation report
+src/validate.py               independent validity checks
+src/markdown_lite.py          minimal Markdown renderer for the docs on the page
+src/export_viz.py             export a completed run to JSON
+src/build_viz.py              render the visual replay
+sql/schema.sql                staging, target, audit and quarantine tables
+viz/template.html             replay page template
+viz/tools.json                production-equivalents table for README and page
+SECURITY.md                   data handling and publication guidance
+data/                         generated sources (ignored by Git)
+out/                          SQLite target, run.json, control_room.html (ignored by Git)
 ```
 
 Artefact sizes: `hris_workers.csv` 23 KB, `payroll_export.csv` 37 KB,
-`org_hierarchy.xml` 1 KB, `hr_migration.db` 648 KB, `run.json` 637 KB,
-`control_room.html` 744 KB, `faq.html` 8 KB.
+`org_hierarchy.xml` 1 KB, `hr_migration.db` 644 KB, `run.json` 635 KB,
+`control_room.html` 679 KB.
