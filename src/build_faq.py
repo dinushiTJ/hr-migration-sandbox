@@ -21,14 +21,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from markdown_lite import render as render_markdown
-from site_chrome import head_assets, nav
+from site_chrome import REPO, head_assets, nav, repo_links
 
 ROOT = Path(__file__).resolve().parent.parent
 FAQ = ROOT / "FAQ.md"
 OUT = ROOT / "out" / "faq.html"
 
 TITLE = "FAQ: HR Data Migration Sandbox"
-REPO = "https://github.com/dinushiTJ/hr-migration-sandbox"
 
 # Colours, type and the long-form text styles come from viz/base.css, whose
 # tokens src/check_contrast.py holds to 4.5:1 in both themes. Only the column
@@ -88,7 +87,7 @@ def check_heading_order(body):
 
 
 def main():
-    body = render_markdown(FAQ.read_text())
+    body = repo_links(render_markdown(FAQ.read_text()))
     levels = check_heading_order(body)
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(PAGE.format(title=html.escape(TITLE), head=head_assets(), nav=nav("faq.html"),

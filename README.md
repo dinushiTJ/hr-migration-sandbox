@@ -19,8 +19,9 @@ generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s
 
 GitHub Pages is configured through `.github/workflows/pages.yml`. It rebuilds
 the synthetic sources in CI, runs validation as a deployment gate, and publishes
-only the generated replay page as `index.html`. Enable **GitHub Actions** as the
-Pages source in the repository settings.
+the three generated pages: the replay (as `index.html` and `control_room.html`),
+`docs.html` and `faq.html`. Enable **GitHub Actions** as the Pages source in the
+repository settings.
 
 ```
 python3 src/generate_sources.py   # build three inconsistent legacy sources
@@ -393,7 +394,7 @@ All four return zero:
 
 `src/export_viz.py` exports the completed run to `out/run.json`, and
 `src/build_viz.py` injects it into `viz/template.html` to produce a
-self-contained `out/control_room.html` (715 KB; the only external request is
+self-contained `out/control_room.html` (721 KB; the only external request is
 for the web fonts). CI publishes it as the
 [live replay](https://dinushitj.github.io/hr-migration-sandbox/).
 
@@ -606,5 +607,5 @@ out/                          SQLite target, run.json, the three pages (ignored 
 ```
 
 Artefact sizes: `hris_workers.csv` 23 KB, `payroll_export.csv` 37 KB,
-`org_hierarchy.xml` 1 KB, `hr_migration.db` 644 KB, `run.json` 635 KB,
-`control_room.html` 715 KB, `docs.html` 76 KB.
+`org_hierarchy.xml` 1 KB, `hr_migration.db` 648 KB, `run.json` 637 KB,
+`control_room.html` 721 KB, `docs.html` 79 KB.

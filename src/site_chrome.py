@@ -6,9 +6,11 @@ Three pages are built by two scripts. Each used to carry its own colours, and
 the FAQ's had already drifted from the replay's. Building the shared parts here
 means a page cannot look like it belongs to a different site.
 """
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+REPO = "https://github.com/dinushiTJ/hr-migration-sandbox"
 BASE_CSS = ROOT / "viz" / "base.css"
 THEME_JS = ROOT / "viz" / "theme.js"
 MOTION_JS = ROOT / "viz" / "motion.js"
@@ -47,8 +49,10 @@ def head_assets():
 
 def nav(active):
     """The bar across the top of every page. `active` is a file name from PAGES."""
+    # Kept out of the f-string: a backslash inside the braces needs Python 3.12.
+    current = ' aria-current="page"'
     links = "".join(
-        f'<a href="{href}"{" aria-current=\"page\"" if href == active else ""}>{label}</a>'
+        f'<a href="{href}"{current if href == active else ""}>{label}</a>'
         for href, label in PAGES)
     return f"""<header class="nav">
   <div class="nav-in">
@@ -57,3 +61,16 @@ def nav(active):
     <button class="theme-btn" id="theme" type="button" aria-label="Switch colour mode">{_SUN}{_MOON}</button>
   </div>
 </header>"""
+
+
+def repo_links(body):
+    """Point the Markdown's relative links at something that exists once
+    published. The README and FAQ link to files beside them, which works on
+    GitHub but not on Pages, where only the three pages are served. The README
+    is the docs page; any other repository file goes to its GitHub view."""
+    def fix(m):
+        path = m.group(1)
+        if path in ("README.md", "./README.md"):
+            return 'href="docs.html"'
+        return f'href="{REPO}/blob/main/{path.removeprefix("./")}"'
+    return re.sub(r'href="((?:\./)?(?!docs\.html|faq\.html|control_room\.html)[\w./-]+\.\w+)"', fix, body)

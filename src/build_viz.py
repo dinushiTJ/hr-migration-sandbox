@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from markdown_lite import render as render_markdown
-from site_chrome import head_assets, nav
+from site_chrome import head_assets, nav, repo_links
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE = ROOT / "viz" / "template.html"
@@ -89,7 +89,7 @@ def build_docs(n):
     """The README as its own page, with the validity checks placed after the
     section that explains how the work was verified."""
     sync_readme_tools()
-    body = render_markdown(README.read_text())
+    body = repo_links(render_markdown(README.read_text()))
     checks = ('<h2 id="validity-checks">Validity checks</h2>\n'
               "<p>Re-derived from the database and the source files, without importing the "
               "pipeline, so a bug shared between the loader and its own reconciliation cannot "
