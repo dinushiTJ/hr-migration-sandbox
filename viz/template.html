@@ -6,442 +6,361 @@
 <title>Migration Control Room</title>
 <meta name="description" content="Replay of one full HR data migration run: legacy records
 validated, mapped into a Workday-shaped target, or quarantined under a numbered rule.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+__HEAD__
 <style>
-:root{
-  --paper:#eef1f4; --surface:#fff; --surface-2:#f7f9fa; --ink:#131820; --muted:#5b6775;
-  --faint:#616d7b; --line:#d9e0e7; --line-strong:#c3ccd6;
-  --chrome:#2d4a7c; --chrome-soft:#e6ecf6;
-  --ok:#0f766e; --ok-soft:#dcf0ed; --bad:#b3261e; --bad-soft:#fbe4e2;
-  --warn:#9b5d00; --warn-soft:#fbeed6;
-  --on-chrome:#fff;
-  --shadow:0 1px 2px rgba(19,24,32,.06),0 8px 24px -16px rgba(19,24,32,.28);
-}
-@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
-  --paper:#0d1117; --surface:#151b23; --surface-2:#1b222c; --ink:#e7ecf2; --muted:#98a4b3;
-  --faint:#818c9a; --line:#252d38; --line-strong:#333d4a;
-  --chrome:#8fb0e8; --chrome-soft:#1c2637;
-  --ok:#3ecfbb; --ok-soft:#123029; --bad:#ff7a6b; --bad-soft:#38191a;
-  --warn:#e8a63d; --warn-soft:#332512;
-  --on-chrome:#0d1117;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
-}}
-:root[data-theme="dark"]{
-  --paper:#0d1117; --surface:#151b23; --surface-2:#1b222c; --ink:#e7ecf2; --muted:#98a4b3;
-  --faint:#818c9a; --line:#252d38; --line-strong:#333d4a;
-  --chrome:#8fb0e8; --chrome-soft:#1c2637;
-  --ok:#3ecfbb; --ok-soft:#123029; --bad:#ff7a6b; --bad-soft:#38191a;
-  --warn:#e8a63d; --warn-soft:#332512;
-  --on-chrome:#0d1117;
-  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -16px rgba(0,0,0,.8);
-}
-*{box-sizing:border-box}
-body{
-  margin:0; background:var(--paper); color:var(--ink);
-  font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
-  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
-}
-h1,h2,h3{font-family:Archivo,system-ui,sans-serif; text-wrap:balance; margin:0}
-.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
-.num{font-family:"IBM Plex Mono",ui-monospace,Menlo,monospace; font-variant-numeric:tabular-nums}
-.wrap{max-width:1180px; margin:0 auto; padding:0 20px 72px; min-width:0}
-html,body{max-width:100%; overflow-x:hidden}
-.eyebrow{
-  font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em;
-  text-transform:uppercase; color:var(--faint);
-}
-#stage-phase{font-variant-numeric:tabular-nums; min-width:132px; text-align:right; flex:none}
-.bar-row .ct{min-width:92px; text-align:right}
-.shown{min-width:118px; text-align:right}
+/* Page-specific layout for the replay. Tokens, type, navigation, pills, buttons
+   and cards come from viz/base.css. Spacing sits on an 8px grid: 8, 12, 16,
+   20, 24, 28. */
 
-/* ---------- masthead ---------- */
-.mast{border-bottom:1px solid var(--line); background:var(--surface); margin-bottom:26px}
-.mast-in{max-width:1180px; margin:0 auto; padding:20px 74px 20px 20px; display:flex;
-  flex-wrap:wrap; gap:18px 26px; align-items:baseline; position:relative}
-.mast h1{font-size:22px; font-weight:700; letter-spacing:-.015em}
-.mast .sub{color:var(--muted); font-size:13.5px; max-width:62ch}
-.runbar{margin-left:auto; display:flex; gap:22px; align-items:baseline; flex-wrap:wrap}
-.runbar div{display:flex; flex-direction:column; gap:2px}
-.runbar .v{font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:500}
-.pill{display:inline-flex; align-items:center; gap:6px; padding:2px 9px; border-radius:3px;
-  font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; letter-spacing:.06em;
-  white-space:nowrap; flex:none; justify-content:center}
-.pill.ok{background:var(--ok-soft); color:var(--ok)}
-.pill.bad{background:var(--bad-soft); color:var(--bad)}
-.pill.warn{background:var(--warn-soft); color:var(--warn)}
-.pill.idle{background:var(--surface-2); color:var(--faint)}
+/* ---------- opening screen ---------- */
+/* The dot grid and glow bleed to the window edges; the content stays on the
+   page's left edge. Both sit behind the text, faded out by a mask. */
+.hero{position:relative; isolation:isolate; padding:64px 0 64px}
+.hero::before{content:""; position:absolute; z-index:-1; top:-1px; bottom:0; left:50%; width:100vw;
+  transform:translateX(-50%);
+  background-image:radial-gradient(var(--line-strong) 1px, transparent 1.3px); background-size:22px 22px;
+  -webkit-mask-image:radial-gradient(ellipse 60% 75% at 28% 30%, #000 10%, transparent 72%);
+  mask-image:radial-gradient(ellipse 60% 75% at 28% 30%, #000 10%, transparent 72%)}
+.hero::after{content:""; position:absolute; z-index:-1; top:-80px; left:-8%; width:min(720px,90vw);
+  height:480px; background:radial-gradient(closest-side, var(--glow-chrome), transparent)}
+.hero .meta{margin:0 0 28px}
+.hero h1{font-size:clamp(40px,6.6vw,84px); font-weight:400; letter-spacing:-.045em; line-height:.98}
+.hero h1 .h-2{color:var(--muted)}
+.hero .sub{margin-top:24px; font-size:16.5px; max-width:58ch}
+.cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px}
+.cta .btn{height:44px; padding:0 22px; font-size:12.5px}
+.stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:64px 0 0;
+  border-top:1px solid var(--line-strong)}
+.stats > div{padding:20px 24px 0 0; min-width:0}
+.stats > div + div{padding-left:24px; border-left:1px solid var(--line)}
+.stats dt{font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint)}
+.stats dd{margin:12px 0 0; font-family:var(--sans); font-size:clamp(30px,3.8vw,48px); font-weight:500;
+  letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums; white-space:nowrap}
+.t-ok{color:var(--ok)} .t-bad{color:var(--bad)}
+@media (max-width:760px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stats > div:nth-child(3){padding-left:0; border-left:0}
+  .stats > div:nth-child(n+3){padding-top:24px}
+}
 
 /* ---------- transport ---------- */
-.transport{
-  background:var(--surface); border:1px solid var(--line); border-radius:6px;
-  box-shadow:var(--shadow); padding:14px 16px; display:flex; gap:16px; align-items:center;
-  flex-wrap:wrap; margin-bottom:22px; position:sticky; top:0; z-index:20;
+.transport{position:sticky; top:72px; z-index:30; display:flex; align-items:center; gap:12px;
+  flex-wrap:wrap; padding:8px; margin:0 0 8px; border:1px solid var(--line); border-radius:999px;
+  background:color-mix(in srgb, var(--surface) 88%, transparent);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); box-shadow:var(--shadow-lg)}
+@media (max-width:760px){.transport{border-radius:16px; top:68px}}
+#play{min-width:112px}
+.speeds{display:flex; gap:2px; padding:3px; border-radius:999px; background:var(--surface-2);
+  border:1px solid var(--line)}
+.speeds button{height:28px; padding:0 12px; border:0; border-radius:999px; background:transparent;
+  color:var(--muted); font-family:var(--mono); font-size:11.5px; font-weight:500}
+.speeds button:hover{color:var(--ink)}
+.speeds button[aria-pressed="true"]{background:var(--surface); color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-strong)}
+.scrub{flex:1; min-width:220px; display:flex; align-items:center; gap:16px; padding:0 12px 0 4px}
+/* The filled part of the track is drawn from --p, which render() keeps in step
+   with the replay position. */
+input[type=range]{flex:1; height:22px; margin:0; background:none; cursor:pointer;
+  -webkit-appearance:none; appearance:none; --p:0%}
+input[type=range]::-webkit-slider-runnable-track{height:4px; border-radius:999px;
+  background:linear-gradient(90deg, var(--ink) var(--p), var(--line-strong) var(--p))}
+input[type=range]::-moz-range-track{height:4px; border-radius:999px; background:var(--line-strong)}
+input[type=range]::-moz-range-progress{height:4px; border-radius:999px; background:var(--ink)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:16px; height:16px;
+  margin-top:-6px; border-radius:50%; background:var(--paper); border:2px solid var(--ink)}
+input[type=range]::-moz-range-thumb{width:12px; height:12px; border-radius:50%;
+  background:var(--paper); border:2px solid var(--ink)}
+.progress-read{font-family:var(--mono); font-size:12.5px; color:var(--muted); white-space:nowrap;
+  font-variant-numeric:tabular-nums; min-width:9ch; text-align:right}
+#pos{display:inline-block; min-width:3ch; text-align:right; color:var(--ink)}
+
+/* ---------- financial control total ---------- */
+.ct{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.ct-main{padding:28px; border-right:1px solid var(--line); display:flex; flex-direction:column;
+  justify-content:space-between; gap:40px; min-width:0}
+.ct-top{display:flex; justify-content:space-between; align-items:center; gap:12px}
+.ct-big{font-family:var(--sans); font-weight:500; font-size:clamp(76px,11vw,144px);
+  letter-spacing:-.055em; line-height:.84; font-variant-numeric:tabular-nums; color:var(--ink);
+  margin-left:-.04em; transition:color .2s}
+.ct-big.ok{color:var(--ok)} .ct-big.bad{color:var(--bad)}
+/* settles in once, when the run starts and the residual is first judged */
+.motion .ct-big.ok{animation:settle .6s cubic-bezier(.2,.7,.2,1)}
+@keyframes settle{from{opacity:.4; transform:translateY(6px)} to{opacity:1; transform:none}}
+.ct-ledger{padding:28px; display:flex; flex-direction:column; justify-content:center; min-width:0}
+.lrow{display:grid; grid-template-columns:20px minmax(0,1fr) auto auto; gap:12px;
+  align-items:baseline; padding:14px 0; border-bottom:1px solid var(--line)}
+.lrow .op{font-family:var(--mono); font-size:14px; color:var(--faint); text-align:center}
+.lrow .lbl{font-size:14px; color:var(--muted); display:flex; align-items:center; gap:10px;
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.lrow .pct{font-family:var(--mono); font-size:12px; color:var(--faint); min-width:6ch;
+  text-align:right; font-variant-numeric:tabular-nums}
+.lrow .amt{font-family:var(--mono); font-size:15px; min-width:14ch; text-align:right;
+  font-variant-numeric:tabular-nums; white-space:nowrap}
+.lrow.total{border-bottom:0; border-top:1px solid var(--ink); margin-top:-1px}
+.lrow.total .lbl{color:var(--ink); font-weight:500}
+.lrow.total .amt{font-weight:500}
+.sw{width:8px; height:8px; border-radius:2px; flex:none; display:inline-block}
+.ctbar{display:flex; height:8px; border-radius:999px; overflow:hidden; margin-top:24px;
+  background:var(--surface-2); box-shadow:inset 0 0 0 1px var(--line)}
+.ctbar i{height:100%; transition:width .12s linear}
+.ctbar-key{display:flex; justify-content:space-between; gap:12px; margin-top:10px;
+  font-family:var(--mono); font-size:11px; letter-spacing:.06em; color:var(--faint)}
+@media (max-width:900px){
+  .ct{grid-template-columns:1fr}
+  .ct-main{border-right:0; border-bottom:1px solid var(--line)}
 }
-button{font:inherit; cursor:pointer}
-.btn{
-  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.05em;
-  padding:8px 14px; border-radius:4px; border:1px solid var(--line-strong);
-  background:var(--surface-2); color:var(--ink); transition:background .12s,border-color .12s;
+@media (max-width:520px){
+  .ct-main,.ct-ledger{padding:20px}
+  .lrow{grid-template-columns:16px minmax(0,1fr) auto; gap:8px}
+  .lrow .pct{display:none}
+  .lrow .amt{min-width:0; font-size:14px}
 }
-.btn:hover{border-color:var(--chrome); background:var(--chrome-soft)}
-.btn:focus-visible,input:focus-visible{outline:2px solid var(--chrome); outline-offset:2px}
-.btn.primary{background:var(--chrome); border-color:var(--chrome); color:var(--on-chrome); min-width:104px}
-.btn.primary:hover{background:var(--chrome); filter:brightness(1.08)}
-.speeds{display:flex; gap:0; border:1px solid var(--line-strong); border-radius:4px; overflow:hidden}
-.speeds button{
-  font-family:"IBM Plex Mono",monospace; font-size:12px; padding:7px 11px; border:0;
-  background:var(--surface-2); color:var(--muted); border-right:1px solid var(--line);
-}
-.speeds button:last-child{border-right:0}
-.speeds button[aria-pressed="true"]{background:var(--chrome); color:var(--on-chrome); font-weight:600}
-.scrub{flex:1; min-width:220px; display:flex; align-items:center; gap:12px}
-input[type=range]{flex:1; accent-color:var(--chrome); height:22px}
-.progress-read{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--muted);
-  white-space:nowrap; font-variant-numeric:tabular-nums; min-width:82px; text-align:right}
-#pos{display:inline-block; min-width:3ch; text-align:right}
 
 /* ---------- grid ---------- */
-.main{display:grid; grid-template-columns:1.15fr .85fr; gap:22px; align-items:start}
-.main > *{min-width:0}
+.main{display:grid; grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr); gap:24px; align-items:start}
+.col{display:flex; flex-direction:column; gap:24px; min-width:0}
 @media (max-width:940px){.main{grid-template-columns:1fr}}
-.card{background:var(--surface); border:1px solid var(--line); border-radius:6px;
-  box-shadow:var(--shadow); overflow:hidden; min-width:0}
-.card-b{min-width:0}
-.card-h{padding:13px 16px; border-bottom:1px solid var(--line); display:flex;
-  justify-content:space-between; align-items:baseline; gap:12px; background:var(--surface-2);
-  flex-wrap:nowrap; min-height:47px}
-.card-h h2{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.card-h h2{font-size:13px; font-weight:600; letter-spacing:.04em; text-transform:uppercase}
-.card-b{padding:16px}
-.note{font-size:12.5px; color:var(--muted); line-height:1.5}
 
 /* ---------- record card ---------- */
 /* Every element below is pinned to a fixed size. The record under validation
    changes shape 943 times a run -- an org carries 4 fields, a worker 10 -- and
    letting the container follow the content makes the whole page jump on every
    frame. */
-.stage{height:250px; display:flex; flex-direction:column; gap:12px}
-.rec{border:1px solid var(--line); border-left:3px solid var(--faint); border-radius:4px;
-  padding:12px 14px; background:var(--surface-2); flex:1; overflow-y:auto; overflow-x:hidden;
+.stage{height:256px; display:flex; flex-direction:column; gap:12px}
+.rec{border:1px solid var(--line); border-left:3px solid var(--line-strong); border-radius:var(--radius);
+  padding:12px 16px; background:var(--paper); flex:1; overflow-y:auto; overflow-x:hidden;
   min-height:0; min-width:0}
 .rec.loaded{border-left-color:var(--ok)}
 .rec.rejected{border-left-color:var(--bad)}
 .rec.flagged{border-left-color:var(--warn)}
 .rec-top{display:flex; justify-content:space-between; gap:12px; align-items:baseline;
-  margin-bottom:9px; min-width:0}
-.rec-ent{flex:none}
-.rec-id{font-family:"IBM Plex Mono",monospace; font-size:15px; font-weight:600;
+  margin-bottom:12px; min-width:0}
+.rec-id{font-family:var(--mono); font-size:15px; font-weight:500;
   min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.rec-ent{font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
-  font-family:"IBM Plex Mono",monospace}
-.fields{display:grid; grid-template-columns:repeat(auto-fill,minmax(146px,1fr)); gap:8px 14px}
-.f{display:flex; flex-direction:column; gap:1px; min-width:0}
-.f .k{font-size:10.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--faint);
-  font-family:"IBM Plex Mono",monospace}
-.f .v{font-family:"IBM Plex Mono",monospace; font-size:12.5px; overflow:hidden;
-  text-overflow:ellipsis; white-space:nowrap}
+.rec-ent{flex:none; font-family:var(--mono); font-size:11px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint)}
+.fields{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:8px 16px}
+.f{display:flex; flex-direction:column; gap:2px; min-width:0}
+.f .k{font-family:var(--mono); font-size:10.5px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--faint)}
+.f .v{font-family:var(--mono); font-size:12.5px; overflow:hidden; text-overflow:ellipsis;
+  white-space:nowrap}
 .f .v.empty{color:var(--bad); font-style:italic}
-.tag{display:inline-block; font-family:"IBM Plex Mono",monospace; font-size:10px;
-  padding:0 5px; border-radius:2px; background:var(--chrome-soft); color:var(--chrome);
-  margin-left:5px; font-weight:600}
-.ws{background:var(--warn-soft); color:var(--warn); border-radius:2px}
-.verdict{display:flex; gap:10px; align-items:flex-start; font-size:13px; padding:9px 11px;
-  border-radius:4px; background:var(--surface); min-height:58px; flex:none}
+.tag{display:inline-block; font-family:var(--mono); font-size:10px; padding:0 6px;
+  border-radius:999px; background:var(--chrome-soft); color:var(--chrome); margin-left:6px; font-weight:500}
+.ws{background:var(--warn-soft); color:var(--warn); border-radius:2px; font-style:normal}
+.verdict{display:flex; gap:12px; align-items:flex-start; font-size:13px; padding:10px 12px;
+  border-radius:var(--radius); background:var(--surface-2); min-height:60px; flex:none}
 .verdict.loaded{background:var(--ok-soft); color:var(--ok)}
 .verdict.rejected{background:var(--bad-soft); color:var(--bad)}
 .verdict.flagged{background:var(--warn-soft); color:var(--warn)}
-.verdict .rid{font-family:"IBM Plex Mono",monospace; font-weight:600; white-space:nowrap; flex:none}
+.verdict .rid{font-family:var(--mono); font-weight:600; white-space:nowrap; flex:none}
 .verdict span:last-child{min-width:0; overflow-wrap:anywhere}
-.ticker{display:flex; flex-direction:column-reverse; gap:0; height:156px; overflow:hidden;
-  border-top:1px solid var(--line); margin-top:2px; justify-content:flex-start}
-.tk{display:flex; gap:10px; align-items:center; padding:0 2px; font-size:12px;
-  border-bottom:1px solid var(--line); font-family:"IBM Plex Mono",monospace;
-  height:26px; flex:none; box-sizing:border-box}
+.ticker{display:flex; flex-direction:column-reverse; height:168px; overflow:hidden;
+  border-top:1px solid var(--line); margin-top:12px}
+.tk{display:flex; gap:12px; align-items:center; padding:0 2px; font-family:var(--mono);
+  font-size:12px; border-bottom:1px solid var(--line); height:28px; flex:none; min-width:0}
 .tk .dot{width:6px; height:6px; border-radius:50%; flex:none}
 .tk.loaded .dot{background:var(--ok)} .tk.rejected .dot{background:var(--bad)}
 .tk.flagged .dot{background:var(--warn)}
-.tk{min-width:0}
-.tk .who{min-width:64px; flex:none} .tk .msg{color:var(--muted); overflow:hidden;
-  text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0}
+.tk .who{min-width:64px; flex:none}
+.tk .msg{color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  flex:1; min-width:0}
+.empty-note{font-size:14px; color:var(--muted); line-height:1.6; margin:0; max-width:56ch}
 
-/* ---------- control total ---------- */
-.ledger{display:flex; flex-direction:column; gap:0}
-.lrow{display:flex; justify-content:space-between; align-items:baseline; gap:14px;
-  padding:9px 0; border-bottom:1px solid var(--line); flex-wrap:nowrap; min-height:38px}
-.lrow .lbl{font-size:13px; color:var(--muted); overflow:hidden; text-overflow:ellipsis;
-  white-space:nowrap}
-.lrow .amt{font-family:"IBM Plex Mono",monospace; font-size:15px;
-  font-variant-numeric:tabular-nums; white-space:nowrap; flex:none;
-  min-width:14ch; text-align:right}
-.lrow.minus .amt{color:var(--muted)}
-.lrow.total{border-bottom:0; border-top:2px solid var(--ink); margin-top:4px; padding-top:11px}
-.lrow.total .lbl{color:var(--ink); font-weight:600; font-size:13px}
-.lrow.total{min-height:46px}
-.lrow.total .amt{font-size:20px; font-weight:600; min-width:11ch}
-.balanced .amt{color:var(--ok)}
-.bars{display:flex; flex-direction:column; gap:13px}
-.bar-row .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px}
-.bar-row .nm{font-family:"IBM Plex Mono",monospace; font-size:12.5px}
-.bar-row .ct{font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted)}
-.track{height:9px; background:var(--surface-2); border:1px solid var(--line); border-radius:2px;
-  display:flex; overflow:hidden}
+/* ---------- entity bars ---------- */
+.bars{display:flex; flex-direction:column; gap:16px}
+.bar-row .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px}
+.bar-row .nm{font-family:var(--mono); font-size:12.5px}
+.bar-row .ct{font-family:var(--mono); font-size:12px; color:var(--muted); min-width:92px;
+  text-align:right; font-variant-numeric:tabular-nums}
+.track{height:8px; background:var(--surface-2); border-radius:999px; display:flex; overflow:hidden;
+  box-shadow:inset 0 0 0 1px var(--line)}
 .seg{height:100%; transition:width .12s linear}
 .seg.loaded{background:var(--ok)} .seg.flagged{background:var(--warn)}
 .seg.rejected{background:var(--bad)}
-.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:11.5px; color:var(--muted); margin-top:12px}
-.legend span{display:flex; align-items:center; gap:6px}
-.sw{width:9px; height:9px; border-radius:2px; flex:none}
+.legend{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--muted); margin-top:16px}
+.legend span{display:flex; align-items:center; gap:8px}
 
 /* ---------- rules ---------- */
 table{width:100%; border-collapse:collapse; font-size:13px}
-th{text-align:left; font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
-  color:var(--faint); font-family:"IBM Plex Mono",monospace; font-weight:600;
-  padding:0 10px 7px 0; border-bottom:1px solid var(--line)}
+th{text-align:left; font-family:var(--mono); font-size:10.5px; font-weight:500; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--faint); padding:0 12px 8px 0; border-bottom:1px solid var(--line)}
 th.r,td.r{text-align:right; padding-right:0}
-td{padding:8px 10px 8px 0; border-bottom:1px solid var(--line); vertical-align:top}
+td{padding:10px 12px 10px 0; border-bottom:1px solid var(--line); vertical-align:top}
+.rules-t{table-layout:fixed}
+.rules-t th:first-child,.rules-t td.rid{width:84px}
+.rules-t th.r,.rules-t td.ct{width:76px}
 tr.rule{cursor:pointer}
 tr.rule:hover td{background:var(--surface-2)}
 tr.rule[aria-expanded="true"] td{background:var(--chrome-soft)}
-td.rid{font-family:"IBM Plex Mono",monospace; font-weight:600; white-space:nowrap; width:1%}
+td.rid{font-family:var(--mono); font-weight:500; white-space:nowrap}
 td.why{color:var(--muted)}
-td.ct{font-family:"IBM Plex Mono",monospace; font-variant-numeric:tabular-nums;
-  width:1%; white-space:nowrap}
+td.ct{font-family:var(--mono); font-variant-numeric:tabular-nums; white-space:nowrap}
 td.ct span:first-child{display:inline-block; min-width:2.6ch; text-align:right}
-.card-b table{table-layout:fixed}
-.card-b table th:first-child,.card-b table td.rid{width:78px}
-.card-b table th.r,.card-b table td.ct{width:74px}
-.minibar{height:4px; background:var(--line); border-radius:2px; margin-top:5px; overflow:hidden}
+.minibar{height:3px; background:var(--line); border-radius:999px; margin-top:8px; overflow:hidden}
 .minibar i{display:block; height:100%; transition:width .15s linear}
-.drawer td{background:var(--surface-2); padding:0}
-.drawer-in{padding:12px 14px; display:flex; flex-direction:column; gap:7px; max-height:290px;
-  overflow:auto}
-.qrec{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted);
-  border-left:2px solid var(--line-strong); padding-left:9px; word-break:break-word}
-.qrec b{color:var(--ink); font-weight:600}
-.disp{font-family:"IBM Plex Mono",monospace; font-size:10px; padding:1px 5px; border-radius:2px}
+.drawer td{background:var(--paper); padding:0}
+.drawer-in{padding:12px 16px; display:flex; flex-direction:column; gap:8px; max-height:290px; overflow:auto}
+.qrec{font-family:var(--mono); font-size:11.5px; color:var(--muted);
+  border-left:2px solid var(--line-strong); padding-left:10px; word-break:break-word}
+.qrec b{color:var(--ink); font-weight:500}
+.disp{font-family:var(--mono); font-size:10px; padding:1px 6px; border-radius:999px; white-space:nowrap}
 .disp.rejected{background:var(--bad-soft); color:var(--bad)}
 .disp.flagged{background:var(--warn-soft); color:var(--warn)}
 
 /* ---------- integrity ---------- */
-.checks{display:flex; flex-direction:column; gap:0}
-.chk{display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--line)}
+.checks{display:flex; flex-direction:column}
+.chk{display:flex; align-items:center; gap:12px; height:48px; border-bottom:1px solid var(--line)}
 .chk:last-child{border-bottom:0}
-.chk .nm{flex:1; font-size:13px}
-.chk .n{font-family:"IBM Plex Mono",monospace; font-size:13px; color:var(--muted)}
-.sec-h{display:flex; align-items:baseline; gap:14px; margin:34px 0 14px}
-.sec-h h2{font-size:16px; font-weight:600; letter-spacing:-.01em}
-.sec-h p{margin:0; font-size:12.5px; color:var(--muted)}
-.foot{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); font-size:12.5px;
-  color:var(--muted); max-width:78ch}
-.foot b{color:var(--ink); font-weight:600}
+.chk .nm{flex:1; font-size:13.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.chk .n{font-family:var(--mono); font-size:13px; color:var(--muted); min-width:34px;
+  text-align:right; flex:none}
+.chk .pill{min-width:72px}
+#bal-pill{min-width:104px} #int-pill{min-width:96px} #run-status{min-width:92px}
+
 /* ---------- data browser ---------- */
-.tabs{display:flex; gap:2px; border-bottom:1px solid var(--line); padding:0 16px;
-  background:var(--surface-2); overflow-x:auto; min-width:0}
-.tab{flex:none}
-.tab{
-  font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.04em;
-  padding:11px 15px 9px; border:0; background:none; color:var(--muted);
-  border-bottom:2px solid transparent; margin-bottom:-1px;
-}
+.tabs{display:flex; gap:4px; padding:8px 12px 0; border-bottom:1px solid var(--line); overflow-x:auto}
+.tab{flex:none; font-family:var(--mono); font-size:12px; font-weight:500; letter-spacing:.04em;
+  padding:10px 14px 12px; border:0; background:none; color:var(--muted);
+  border-bottom:2px solid transparent; margin-bottom:-1px}
 .tab:hover{color:var(--ink)}
-.tab[aria-selected="true"]{color:var(--chrome); border-bottom-color:var(--chrome)}
-.tab .n{font-weight:400; color:var(--faint); margin-left:5px; display:inline-block;
+.tab[aria-selected="true"]{color:var(--ink); border-bottom-color:var(--ink)}
+.tab .n{font-weight:400; color:var(--faint); margin-left:6px; display:inline-block;
   min-width:3.4ch; text-align:right; font-variant-numeric:tabular-nums}
-.browser-tools{display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:13px 16px;
-  border-bottom:1px solid var(--line); min-width:0}
-.chips{display:flex; gap:0; border:1px solid var(--line-strong); border-radius:4px; overflow:hidden}
-.chip{font-family:"IBM Plex Mono",monospace; font-size:11.5px; padding:6px 11px; border:0;
-  background:var(--surface-2); color:var(--muted); border-right:1px solid var(--line)}
-.chip:last-child{border-right:0}
-.chip[aria-pressed="true"]{background:var(--chrome); color:var(--on-chrome); font-weight:600}
-.search{flex:1; min-width:170px; max-width:300px; font:inherit; font-size:13px; padding:6px 10px;
-  border:1px solid var(--line-strong); border-radius:4px; background:var(--surface);
-  color:var(--ink); font-family:"IBM Plex Mono",monospace}
+.browser-tools{display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:12px 20px;
+  border-bottom:1px solid var(--line)}
+.chips{display:flex; gap:2px; padding:3px; border-radius:999px; background:var(--surface-2);
+  border:1px solid var(--line)}
+.chip{height:28px; padding:0 12px; border:0; border-radius:999px; background:transparent;
+  color:var(--muted); font-family:var(--mono); font-size:11.5px; font-weight:500}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--surface); color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--line-strong)}
+.search{flex:1; min-width:170px; max-width:320px; height:36px; padding:0 16px; border-radius:999px;
+  border:1px solid var(--line-strong); background:var(--paper); color:var(--ink);
+  font-family:var(--mono); font-size:12.5px}
 .search::placeholder{color:var(--faint)}
-.shown{font-family:"IBM Plex Mono",monospace; font-size:11.5px; color:var(--muted);
-  margin-left:auto; font-variant-numeric:tabular-nums}
+.shown{font-family:var(--mono); font-size:11.5px; color:var(--muted); margin-left:auto;
+  font-variant-numeric:tabular-nums; min-width:118px; text-align:right}
 .dwrap{overflow:auto; height:520px}
-table.data{font-size:12.5px; font-family:"IBM Plex Mono",monospace; min-width:100%;
-  table-layout:fixed}
-table.data td{overflow:hidden; text-overflow:ellipsis}
+table.data{font-family:var(--mono); font-size:12.5px; min-width:100%; table-layout:fixed}
+table.data td{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:8px 12px 8px 20px}
 table.data td:first-child,table.data th:first-child{width:132px}
-table.data th{position:sticky; top:0; background:var(--surface); z-index:1; padding:9px 12px 8px 16px;
-  white-space:nowrap; border-bottom:1px solid var(--line-strong)}
-table.data td{padding:7px 12px 7px 16px; white-space:nowrap; border-bottom:1px solid var(--line)}
+table.data th{position:sticky; top:0; z-index:1; background:var(--surface); white-space:nowrap;
+  padding:12px 12px 10px 20px; border-bottom:1px solid var(--line-strong)}
 table.data tr.r{cursor:pointer}
 table.data tr.r:hover td{background:var(--surface-2)}
 table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
-.badge{font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 6px;
-  border-radius:2px; letter-spacing:.04em}
+.badge{font-family:var(--mono); font-size:10px; font-weight:500; padding:2px 8px;
+  border-radius:999px; letter-spacing:.04em}
 .badge.loaded{background:var(--ok-soft); color:var(--ok)}
 .badge.rejected{background:var(--bad-soft); color:var(--bad)}
 .badge.flagged{background:var(--warn-soft); color:var(--warn)}
-#bal-pill{min-width:92px} #int-pill{min-width:80px} #run-status{min-width:74px}
-.chk .nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-.chk .n{min-width:34px; text-align:right; flex:none}
-.chk .pill{min-width:62px}
 .arrow{color:var(--faint); padding:0 8px}
 .before-v{color:var(--muted)}
 .after-v{color:var(--ok); font-weight:500}
-.empty-state{padding:34px 16px; text-align:center; color:var(--faint); font-size:13px}
-.ba{display:grid; grid-template-columns:1fr 1fr; gap:0; background:var(--surface-2)}
-@media (max-width:700px){.ba{grid-template-columns:1fr}}
-.ba-col{padding:13px 16px; min-width:0}
+.empty-state{padding:40px 20px; text-align:center; color:var(--faint); font-size:13px}
+.ba{display:grid; grid-template-columns:1fr 1fr; background:var(--paper)}
+.ba-col{padding:16px 20px; min-width:0}
 .ba-col + .ba-col{border-left:1px solid var(--line)}
-@media (max-width:700px){.ba-col + .ba-col{border-left:0; border-top:1px solid var(--line)}}
-.ba-h{font-size:10.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint);
-  font-family:"IBM Plex Mono",monospace; margin-bottom:9px}
-.ba-f{display:flex; gap:10px; padding:3px 0; font-size:12px; align-items:baseline}
+@media (max-width:700px){.ba{grid-template-columns:1fr}
+  .ba-col + .ba-col{border-left:0; border-top:1px solid var(--line)}}
+.ba-h{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em; text-transform:uppercase;
+  color:var(--faint); margin-bottom:10px}
+.ba-f{display:flex; gap:12px; padding:3px 0; font-size:12px; align-items:baseline}
 .ba-f .k{color:var(--faint); min-width:112px; flex:none}
-.ba-f .v{word-break:break-word; white-space:normal; min-width:0; overflow-wrap:anywhere}
-.ba-f.changed .v{background:var(--warn-soft); color:var(--warn); border-radius:2px; padding:0 4px}
-.ba-f.added .v{background:var(--ok-soft); color:var(--ok); border-radius:2px; padding:0 4px}
-/* ---------- documentation ---------- */
-.docs{font-size:14.5px; line-height:1.62}
-.docs > *:first-child{margin-top:0}
-.docs h1{font-size:22px; font-weight:700; letter-spacing:-.015em; margin:0 0 6px}
-.docs h2{font-size:17px; font-weight:600; margin:34px 0 10px; padding-top:16px;
-  border-top:1px solid var(--line)}
-.docs h3{font-size:14px; font-weight:600; margin:24px 0 8px; letter-spacing:.02em;
-  text-transform:uppercase; color:var(--chrome); font-family:"IBM Plex Mono",monospace}
-.docs h4{font-size:14px; font-weight:600; margin:18px 0 6px}
-.docs p{margin:0 0 11px; max-width:74ch}
-.docs ul,.docs ol{margin:0 0 12px; padding-left:22px; max-width:74ch}
-.docs li{margin-bottom:5px}
-.docs li::marker{color:var(--faint)}
-.docs strong{font-weight:600; color:var(--ink)}
-.docs code{font-family:"IBM Plex Mono",monospace; font-size:.88em; background:var(--surface-2);
-  border:1px solid var(--line); border-radius:3px; padding:.5px 4px; white-space:nowrap}
-.docs pre{background:var(--surface-2); border:1px solid var(--line); border-radius:4px;
-  padding:12px 14px; overflow-x:auto; margin:0 0 14px}
-.docs pre code{background:none; border:0; padding:0; font-size:12.5px; line-height:1.5}
-.docs hr{border:0; border-top:1px solid var(--line); margin:26px 0}
-.docs hr + h2{border-top:0; padding-top:0; margin-top:0}
-.docs table:not(:has(thead)) td:first-child{white-space:nowrap; color:var(--muted)}
-.docs .tscroll{overflow-x:auto; margin:0 0 15px; border:1px solid var(--line); border-radius:4px}
-.docs table{width:auto; min-width:100%; border-collapse:collapse; font-size:13px}
-.docs th{background:var(--surface-2); padding:8px 12px; white-space:nowrap;
-  border-bottom:1px solid var(--line-strong); font-family:"IBM Plex Sans",sans-serif;
-  font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
-.docs td{padding:7px 12px; border-bottom:1px solid var(--line); vertical-align:top}
-.docs tr:last-child td{border-bottom:0}
-.docs td,.docs th{white-space:nowrap}
-.docs td:last-child{white-space:normal}
-.checks-out{font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.75;
-  overflow-x:auto; margin:0; white-space:pre}
-.st{font-weight:600; padding:0 5px; border-radius:2px; margin-right:6px}
-.st.PASS{background:var(--ok-soft); color:var(--ok)}
-.st.FAIL{background:var(--bad-soft); color:var(--bad)}
-.st.KNOWN{background:var(--warn-soft); color:var(--warn)}
-.docs-note{font-size:12.5px; color:var(--muted); margin:0 0 16px; max-width:74ch}
-.jump{font-family:"IBM Plex Mono",monospace; font-size:11.5px; letter-spacing:.06em;
-  color:var(--chrome); text-decoration:none; border-bottom:1px solid transparent}
-.jump:hover{border-bottom-color:var(--chrome)}
-.tools-details summary{cursor:pointer; font-weight:600; font-size:14px; color:var(--chrome);
-  list-style:none; padding:2px 0}
-.tools-details summary::-webkit-details-marker{display:none}
-.tools-details summary::before{content:"▸ "; display:inline-block}
-.tools-details[open] summary::before{content:"▾ "}
-.tools-details .docs-note{margin-top:12px}
+.ba-f .v{white-space:normal; min-width:0; overflow-wrap:anywhere}
+.ba-f.changed .v{background:var(--warn-soft); color:var(--warn); border-radius:3px; padding:0 4px}
+
 /* ---------- flow figure ---------- */
 .flow{margin:0}
-.flow svg{display:block; width:100%; max-width:100%; height:auto}
-.flow .bx{fill:var(--surface-2); stroke:var(--line-strong); stroke-width:1}
-.flow .bx-out{fill:var(--surface-2); stroke:var(--line-strong); stroke-width:1}
-.flow text{font-family:"IBM Plex Mono",ui-monospace,monospace; fill:currentColor}
+.flow svg{display:block; width:100%; height:auto}
+.flow .bx,.flow .bx-out{fill:var(--paper); stroke:var(--line-strong); stroke-width:1}
+.flow text{font-family:var(--mono); fill:currentColor}
 .flow .lbl{font-size:10px; letter-spacing:.1em; fill:var(--faint)}
-.flow .num{font-size:16px; font-weight:600; font-variant-numeric:tabular-nums}
+.flow .num{font-size:16px; font-weight:500; font-variant-numeric:tabular-nums}
 .flow .of{font-size:10.5px; fill:var(--muted); font-variant-numeric:tabular-nums}
-.flow .of2{font-size:9.5px; fill:var(--faint); font-family:"IBM Plex Mono",monospace}
+.flow .of2{font-size:9.5px; fill:var(--faint)}
 .flow .edge{font-size:11px; fill:var(--muted)}
-.flow .pipe{fill:none; stroke:currentColor; stroke-width:1.5; opacity:.45}
+.flow .pipe{fill:none; stroke:currentColor; stroke-width:1.5; opacity:.4}
 .flow .ok{stroke:var(--ok)} .flow .bad{stroke:var(--bad)} .flow .warn{stroke:var(--warn)}
 .flow .pipe.ok,.flow .pipe.bad,.flow .pipe.warn{opacity:1; stroke-width:2}
 .flow .t-ok{fill:var(--ok)} .flow .t-bad{fill:var(--bad)} .flow .t-warn{fill:var(--warn)}
 .flow .fic{stroke:var(--faint); fill:none; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
 .flow .fic.ok{stroke:var(--ok)} .flow .fic.bad{stroke:var(--bad)}
 .flow .casc{fill:none; stroke:var(--bad); stroke-width:1.5; stroke-dasharray:4 4; opacity:.85}
-.flow figcaption{font-size:12.5px; color:var(--muted); margin-top:12px; max-width:88ch;
-  line-height:1.55}
-.flow figcaption b{color:var(--ink); font-weight:600}
-/* ---------- icons ---------- */
-.ic{width:17px; height:17px; flex:none; stroke:currentColor; fill:none; stroke-width:1.7;
-  stroke-linecap:round; stroke-linejoin:round; vertical-align:-3px}
-.ic.lg{width:22px; height:22px}
+.flow figcaption{font-size:13.5px; color:var(--muted); margin-top:16px; max-width:88ch; line-height:1.6}
+.flow figcaption b{color:var(--ink); font-weight:500}
 
 /* ---------- before and after ---------- */
-/* Colour is load-bearing here, not decoration:
-   teal   = reached the target        red   = rejected or broken in the source
-   amber  = changed, or loaded flagged  blue = a pipeline step
-   grey   = raw, not yet judged                                             */
-.ba-head{display:grid; grid-template-columns:1fr 128px 30px 128px; gap:0 14px;
-  padding:0 0 10px; border-bottom:1px solid var(--line-strong); align-items:end}
-.ba-head .h{font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.1em;
-  text-transform:uppercase; display:flex; align-items:center; gap:7px}
+.ba-head{display:grid; grid-template-columns:1fr 128px 32px 128px; gap:0 16px;
+  padding:0 0 12px; border-bottom:1px solid var(--line-strong); align-items:end}
+.ba-head .h{font-family:var(--mono); font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; display:flex; align-items:center; gap:8px}
+.ba-head .h.w{color:var(--faint)}
 .ba-head .h.b{color:var(--bad); justify-content:flex-end}
 .ba-head .h.a{color:var(--ok); justify-content:flex-end}
-.ba-row{display:grid; grid-template-columns:1fr 128px 30px 128px; gap:0 14px;
-  padding:11px 0; border-bottom:1px solid var(--line); align-items:center}
+.ba-row{display:grid; grid-template-columns:1fr 128px 32px 128px; gap:0 16px;
+  min-height:64px; padding:12px 0; border-bottom:1px solid var(--line); align-items:center}
 .ba-row:last-of-type{border-bottom:0}
-.ba-what{display:flex; gap:11px; align-items:flex-start; min-width:0}
-.ba-what .ic{margin-top:2px; color:var(--chrome)}
-.ba-what .nm{font-size:13.5px; font-weight:500}
-.ba-what .nt{font-size:11.5px; color:var(--muted); line-height:1.4}
-.ba-v{font-family:"IBM Plex Mono",monospace; font-size:17px; font-weight:600; text-align:right;
+.ba-what{display:flex; gap:12px; align-items:flex-start; min-width:0}
+.ba-what .ic{margin-top:3px; color:var(--chrome)}
+.ba-what .nm{font-size:14px; font-weight:500}
+.ba-what .nt{font-size:12.5px; color:var(--muted); line-height:1.45}
+.ba-v{font-family:var(--mono); font-size:17px; font-weight:500; text-align:right;
   font-variant-numeric:tabular-nums; white-space:nowrap}
 .ba-v.b{color:var(--bad)} .ba-v.a{color:var(--ok)} .ba-v.n{color:var(--muted)}
-.ba-arrow{text-align:center; color:var(--faint); font-family:"IBM Plex Mono",monospace;
-  font-size:14px}
+.ba-arrow{text-align:center; color:var(--faint); font-family:var(--mono); font-size:14px}
 @media (max-width:720px){
   .ba-head{display:none}
-  .ba-row{grid-template-columns:1fr auto; gap:4px 10px}
+  .ba-row{grid-template-columns:1fr auto; gap:4px 12px}
   .ba-row .ba-arrow{display:none}
   .ba-v{font-size:15px}
   .ba-v.b::after{content:" before"; font-size:9.5px; color:var(--faint); font-weight:400}
   .ba-v.a::after{content:" after"; font-size:9.5px; color:var(--faint); font-weight:400}
 }
-.key{display:flex; flex-wrap:wrap; gap:6px 20px; margin-top:16px; padding-top:14px;
-  border-top:1px solid var(--line); font-size:11.5px; color:var(--muted)}
-.key div{display:flex; align-items:center; gap:7px}
-.key i{width:10px; height:10px; border-radius:2px; flex:none}
+
 /* ---------- production equivalents ---------- */
 /* Tool tiles are monograms, deliberately not company logos, and deliberately
    outside the outcome palette: teal, red and amber mean loaded, rejected and
    flagged everywhere on this page, and a tool is none of those things. */
-.tool-stage{display:grid; grid-template-columns:270px 1fr; gap:0 26px; padding:15px 0;
+.tools-details summary{cursor:pointer; list-style:none; display:flex; align-items:center;
+  justify-content:space-between; gap:16px; font-size:14px; font-weight:500}
+.tools-details summary::-webkit-details-marker{display:none}
+.tools-details summary .chev{transition:transform .15s; color:var(--faint)}
+.tools-details[open] summary .chev{transform:rotate(180deg)}
+.tools-details .note{margin:16px 0 8px}
+.tool-stage{display:grid; grid-template-columns:280px 1fr; gap:0 24px; padding:16px 0;
   border-bottom:1px solid var(--line); align-items:start}
 .tool-stage:last-child{border-bottom:0}
-.tool-stage .lhs{display:flex; gap:11px; align-items:flex-start; min-width:0}
-.tool-stage .ic{margin-top:2px; color:var(--chrome)}
-.tool-stage .nm{font-size:13.5px; font-weight:600; display:block; margin-bottom:3px}
-.tool-stage .here{font-size:11.5px; color:var(--muted); line-height:1.45}
-.tool-stage .here b{color:var(--faint); font-weight:600; font-family:"IBM Plex Mono",monospace;
-  font-size:10px; letter-spacing:.08em; text-transform:uppercase; display:block; margin-bottom:2px}
+.tool-stage .lhs{display:flex; gap:12px; align-items:flex-start; min-width:0}
+.tool-stage .ic{margin-top:3px; color:var(--chrome)}
+.tool-stage .nm{font-size:14px; font-weight:500; display:block; margin-bottom:4px}
+.tool-stage .here{font-size:12.5px; color:var(--muted); line-height:1.45}
+.tool-stage .here b{display:block; margin-bottom:2px; color:var(--faint); font-weight:500;
+  font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase}
 .tools{display:flex; flex-wrap:wrap; gap:8px}
-.tool{display:inline-flex; align-items:center; gap:8px; padding:5px 11px 5px 5px;
-  border:1px solid var(--line); border-radius:999px; background:var(--surface-2);
-  font-size:12.5px; white-space:nowrap}
-.tool i{display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
+.tool{display:inline-flex; align-items:center; gap:8px; height:32px; padding:0 12px 0 4px;
+  border:1px solid var(--line); border-radius:999px; background:var(--paper); font-size:12.5px;
+  white-space:nowrap}
+.tool i{display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px;
   border-radius:50%; background:var(--chrome-soft); color:var(--chrome); flex:none;
-  font-family:"IBM Plex Mono",monospace; font-size:9px; font-weight:600; font-style:normal;
-  letter-spacing:.02em}
-@media (max-width:720px){.tool-stage{grid-template-columns:1fr; gap:10px}}
+  font-family:var(--mono); font-size:9px; font-weight:600; font-style:normal}
+@media (max-width:720px){.tool-stage{grid-template-columns:1fr; gap:12px}}
 
-/* ---------- theme toggle ---------- */
-/* Pinned to the corner rather than sitting among the run details: it is a
-   viewer preference, not a fact about the run. */
-.theme-btn{position:absolute; top:18px; right:18px; width:34px; height:34px; padding:0;
-  display:inline-flex; align-items:center; justify-content:center; border-radius:6px;
-  border:1px solid var(--line-strong); background:var(--surface-2); color:var(--muted);
-  transition:color .12s, border-color .12s}
-.theme-btn:hover{border-color:var(--chrome); color:var(--chrome)}
-.theme-btn .ic{width:16px; height:16px}
-@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}}
+/* ---------- footer ---------- */
+.foot{margin-top:72px; padding-top:20px; border-top:1px solid var(--line-strong);
+  display:grid; grid-template-columns:72px 1fr; gap:0 24px; font-size:13.5px; color:var(--muted);
+  line-height:1.65}
+.foot p{margin:0 0 12px; max-width:78ch}
+.foot b{color:var(--ink); font-weight:500}
+@media (max-width:640px){.foot{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Skip to the replay</a>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <defs>
@@ -454,35 +373,35 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
     <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 18a8 8 0 1 1 16 0"></path><path d="M12 18l4-5"></path></symbol>
     <symbol id="i-overlap" viewBox="0 0 24 24"><rect x="2" y="6" width="13" height="5" rx="1.5"></rect><rect x="9" y="14" width="13" height="5" rx="1.5"></rect><path d="M12 6v13" stroke-dasharray="2 2"></path></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"></path><path d="M14 3v5h5"></path></symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.5"></circle><path d="M12 1.5v3M12 19.5v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M1.5 12h3M19.5 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></symbol>
-    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"></path></symbol>
     <symbol id="i-db" viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="8" ry="3"></ellipse><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"></path><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"></path></symbol>
   </defs>
 </svg>
-<header class="mast">
-  <div class="mast-in">
-    <button class="theme-btn" id="theme" title="Switch colour mode"
-            aria-label="Switch colour mode">
-      <svg class="ic" aria-hidden="true"><use href="#i-moon" id="theme-icon"></use></svg>
-    </button>
-    <div>
-      <div class="eyebrow">HR data migration sandbox</div>
-      <h1>Migration Control Room</h1>
-      <p class="sub">Replay of one full run: 943 legacy HR, payroll and org records
-        validated, mapped into a Workday-shaped target, or quarantined under a numbered rule.</p>
-    </div>
-    <div class="runbar">
-      <div><span class="eyebrow">Run</span><span class="v" id="run-id">·</span></div>
-      <div><span class="eyebrow">Started</span><span class="v" id="run-at">·</span></div>
-      <div><span class="eyebrow">Status</span><span id="run-status" class="pill idle">IDLE</span></div>
-      <div><span class="eyebrow">Docs</span><a class="jump" href="#docs">Documentation ↓</a> · <a class="jump" href="faq.html">FAQ</a></div>
 
-    </div>
-  </div>
-</header>
+__NAV__
 
-<div class="wrap">
-  <div class="transport">
+<main class="wrap" id="main">
+  <section class="hero">
+    <div class="meta">
+      <span id="run-status" class="pill idle">IDLE</span>
+      <div>Run <span class="v" id="run-id">·</span></div>
+      <div>Started <span class="v" id="run-at">·</span></div>
+    </div>
+    <h1><span id="h-records">943</span> records in.<br><span class="h-2">Every dollar accounted for.</span></h1>
+    <p class="sub">Migration Control Room: a replay of one full run. 943 legacy HR, payroll and org records
+      validated, mapped into a Workday-shaped target, or quarantined under a numbered rule.</p>
+    <div class="cta">
+      <button class="btn primary" id="cta-play" type="button">▶ Play the replay</button>
+      <a class="btn" href="docs.html">Read the docs</a>
+    </div>
+    <dl class="stats">
+      <div><dt>Records in</dt><dd class="num" data-count id="s-in">0</dd></div>
+      <div><dt>Rows loaded</dt><dd class="num t-ok" data-count id="s-loaded">0</dd></div>
+      <div><dt>Held in quarantine</dt><dd class="num t-bad" data-count id="s-held">0</dd></div>
+      <div><dt>Residual, NZD</dt><dd class="num t-ok" id="s-res">0.00</dd></div>
+    </dl>
+  </section>
+
+  <div class="transport" id="replay">
     <button class="btn primary" id="play">▶ Run</button>
     <button class="btn" id="step">Step</button>
     <button class="btn" id="reset">Reset</button>
@@ -498,35 +417,57 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
     </div>
   </div>
 
+  <div class="sec-h">
+    <span class="idx">01</span>
+    <h2>Financial control total</h2>
+    <p>Source total, minus what was loaded, minus what was quarantined. A row count would
+      not notice a salary divided by 12; this would, because it checks the money itself.</p>
+  </div>
+  <section class="card ct" aria-label="Financial control total">
+    <div class="ct-main">
+      <div class="ct-top"><span class="eyebrow">Residual</span><span class="pill idle" id="bal-pill">PENDING</span></div>
+      <div class="ct-big" id="m-res">0.00</div>
+    </div>
+    <div class="ct-ledger">
+      <div class="lrow"><span class="op"></span><span class="lbl"><i class="sw" style="background:var(--line-strong)"></i>Source file total</span><span class="pct" id="p-src"></span><span class="amt" id="m-src">0.00</span></div>
+      <div class="lrow"><span class="op">−</span><span class="lbl"><i class="sw" style="background:var(--ok)"></i>Loaded to target</span><span class="pct" id="p-loaded"></span><span class="amt" id="m-loaded">0.00</span></div>
+      <div class="lrow"><span class="op">−</span><span class="lbl"><i class="sw" style="background:var(--bad)"></i>Quarantined</span><span class="pct" id="p-rej"></span><span class="amt" id="m-rej">0.00</span></div>
+      <div class="lrow total"><span class="op">=</span><span class="lbl">Residual</span><span class="pct"></span><span class="amt" id="m-res-row">0.00</span></div>
+      <div class="ctbar" aria-hidden="true">
+        <i id="cb-loaded" style="width:0%;background:var(--ok)"></i>
+        <i id="cb-rej" style="width:0%;background:var(--bad)"></i>
+      </div>
+      <div class="ctbar-key"><span id="cb-read">0% of the source total processed</span><span>NZD</span></div>
+    </div>
+  </section>
 
-
-  <section class="card" style="margin-bottom:22px">
-    <div class="card-h"><h2>Before and after</h2>
-      <span class="eyebrow">measured on the data, not asserted</span></div>
+  <div class="sec-h">
+    <span class="idx">02</span>
+    <h2>Before and after</h2>
+    <p>Problems counted in the legacy files, and the same measure taken on the target
+      once the run finished.</p>
+  </div>
+  <section class="card">
     <div class="card-b">
       <div class="ba-head">
-        <span class="h" style="color:var(--faint)">What was measured</span>
+        <span class="h w">What was measured</span>
         <span class="h b"><svg class="ic"><use href="#i-file"></use></svg>Legacy files</span>
         <span></span>
         <span class="h a"><svg class="ic"><use href="#i-db"></use></svg>Target</span>
       </div>
       <div id="quality"></div>
-      <div class="key">
-        <div><i style="background:var(--ok)"></i>reached the target</div>
-        <div><i style="background:var(--bad)"></i>rejected, or broken in the source</div>
-        <div><i style="background:var(--warn)"></i>changed by cleansing, or loaded and flagged</div>
-        <div><i style="background:var(--chrome)"></i>a pipeline step</div>
-        <div><i style="background:var(--faint)"></i>raw, not yet judged</div>
-      </div>
     </div>
   </section>
 
-  <section class="card" style="margin-bottom:22px">
-    <div class="card-h"><h2>How a record travels</h2>
-      <span class="eyebrow" id="flow-phase">counts follow the replay</span></div>
+  <div class="sec-h">
+    <span class="idx">03</span>
+    <h2>How a record travels</h2>
+    <p>Every source record takes one of these paths. The counts follow the replay.</p>
+  </div>
+  <section class="card">
     <div class="card-b">
       <figure class="flow">
-        <svg viewBox="0 0 1000 348" role="img" aria-label="Three legacy sources are staged verbatim, cleansed, then validated. Records that pass are loaded to the Workday-shaped target, records that fail are quarantined under a numbered rule, and flagged records take both paths at once: loaded and recorded. Rejecting a worker cascades, rejecting that worker's payroll rows too.">
+        <svg class="wipe" viewBox="0 0 1000 348" role="img" aria-label="Three legacy sources are staged verbatim, cleansed, then validated. Records that pass are loaded to the Workday-shaped target, records that fail are quarantined under a numbered rule, and flagged records take both paths at once: loaded and recorded. Rejecting a worker cascades, rejecting that worker's payroll rows too.">
           <defs>
             <marker id="ah" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
               <polygon points="0,1 8,4 0,7" fill="currentColor"></polygon>
@@ -542,17 +483,17 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
             </marker>
           </defs>
 
-          <rect class="bx" x="14" y="30" width="150" height="54" rx="4"></rect>
+          <rect class="bx" x="14" y="30" width="150" height="54" rx="6"></rect>
           <use href="#i-file" x="26" y="40" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="50">HRIS CSV</text>
           <text class="num" x="28" y="72" id="d-hris">0</text>
           <text class="of" x="150" y="72" text-anchor="end">of 309</text>
 
-          <rect class="bx" x="14" y="100" width="150" height="54" rx="4"></rect>
+          <rect class="bx" x="14" y="100" width="150" height="54" rx="6"></rect>
           <use href="#i-file" x="26" y="110" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="120">PAYROLL CSV</text>
           <text class="num" x="28" y="142" id="d-pay">0</text>
           <text class="of" x="150" y="142" text-anchor="end">of 626</text>
 
-          <rect class="bx" x="14" y="170" width="150" height="54" rx="4"></rect>
+          <rect class="bx" x="14" y="170" width="150" height="54" rx="6"></rect>
           <use href="#i-org" x="26" y="180" width="13" height="13" class="fic"></use><text class="lbl" x="45" y="190">ORG XML</text>
           <text class="num" x="28" y="212" id="d-org">0</text>
           <text class="of" x="150" y="212" text-anchor="end">of 8</text>
@@ -561,7 +502,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           <path class="pipe" d="M164,127 H206" marker-end="url(#ah)"></path>
           <path class="pipe" d="M164,197 H206" marker-end="url(#ah)"></path>
 
-          <rect class="bx" x="206" y="30" width="110" height="194" rx="4"></rect>
+          <rect class="bx" x="206" y="30" width="110" height="194" rx="6"></rect>
           <text class="lbl" x="261" y="56" text-anchor="middle">STAGED</text>
           <text class="num" x="261" y="122" text-anchor="middle" id="d-staged">0</text>
           <text class="of" x="261" y="140" text-anchor="middle">of 943</text>
@@ -569,14 +510,14 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 
           <path class="pipe" d="M316,127 H356" marker-end="url(#ah)"></path>
 
-          <rect class="bx" x="356" y="83" width="110" height="88" rx="4"></rect>
+          <rect class="bx" x="356" y="83" width="110" height="88" rx="6"></rect>
           <text class="lbl" x="411" y="107" text-anchor="middle">CLEANSED</text>
           <text class="num" x="411" y="136" text-anchor="middle" id="d-clean">0</text>
           <text class="of" x="411" y="154" text-anchor="middle">values changed</text>
 
           <path class="pipe" d="M466,127 H506" marker-end="url(#ah)"></path>
 
-          <rect class="bx" x="506" y="83" width="120" height="88" rx="4"></rect>
+          <rect class="bx" x="506" y="83" width="120" height="88" rx="6"></rect>
           <text class="lbl" x="566" y="107" text-anchor="middle">VALIDATED</text>
           <text class="of" x="566" y="130" text-anchor="middle">24 numbered</text>
           <text class="of" x="566" y="146" text-anchor="middle">rules</text>
@@ -591,7 +532,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           <path class="pipe warn" d="M684,127 V188 H734" marker-end="url(#ah-warn)"></path>
           <circle cx="684" cy="127" r="3" fill="var(--warn)"></circle>
 
-          <rect class="bx-out" x="740" y="20" width="246" height="88" rx="4"></rect>
+          <rect class="bx-out" x="740" y="20" width="246" height="88" rx="6"></rect>
           <use href="#i-db" x="756" y="33" width="14" height="14" class="fic ok"></use><text class="lbl t-ok" x="776" y="44">TARGET</text>
           <text class="num t-ok" x="758" y="72" id="d-loaded">0</text>
           <text class="of" x="968" y="72" text-anchor="end">rows loaded</text>
@@ -599,7 +540,7 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
 
           <text class="edge t-warn" x="863" y="132" text-anchor="middle" id="d-flagged-line">flagged: 0 take both paths</text>
 
-          <rect class="bx-out" x="740" y="166" width="246" height="88" rx="4"></rect>
+          <rect class="bx-out" x="740" y="166" width="246" height="88" rx="6"></rect>
           <use href="#i-overlap" x="756" y="179" width="14" height="14" class="fic bad"></use><text class="lbl t-bad" x="776" y="190">QUARANTINE</text>
           <text class="num t-bad" x="758" y="218" id="d-rejected">0</text>
           <text class="of" x="968" y="218" text-anchor="end">records held</text>
@@ -608,37 +549,35 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
           <path class="casc" d="M816,254 V292 H566 V175" marker-end="url(#ah-bad)"></path>
           <text class="edge t-bad" x="690" y="308" text-anchor="middle">cascade: a rejected worker rejects that worker's payroll rows</text>
         </svg>
-        <figcaption>Every source record is staged before it is judged, so a broken record is still
-          a fact about what the source sent. The path that catches people out is the amber one:
-          <b>a flagged record is loaded and quarantined</b>, because an org with a missing parent
-          is better loaded as a root than deleted, and a worker with an unresolvable manager is
-          better loaded without a supervisor. Counting those 18 as rejections would report a 9.4%
-          worker rejection rate instead of the true 3.9%.</figcaption>
+        <figcaption><b>A flagged record is loaded and quarantined.</b> An org with a missing parent
+          loads as a root, and a worker with an unknown manager loads without a supervisor; both
+          are also logged. Counting those 18 as rejections would report a 9.4% worker rejection
+          rate instead of the true 3.9%.</figcaption>
       </figure>
     </div>
   </section>
 
+  <div class="sec-h">
+    <span class="idx">04</span>
+    <h2>Record by record</h2>
+    <p>The record being judged, the rule that stopped it if one did, and the running
+      totals. Press Run, or drag the scrubber.</p>
+  </div>
   <div class="main">
-    <div style="display:flex;flex-direction:column;gap:22px">
+    <div class="col">
       <section class="card">
-        <div class="card-h">
-          <h2>Record under validation</h2>
-          <span class="eyebrow" id="stage-phase">waiting</span>
-        </div>
+        <div class="card-h"><h3>Record under validation</h3>
+          <span class="eyebrow" id="stage-phase">waiting</span></div>
         <div class="card-b">
-          <div class="stage" id="stage">
-            <p class="note">Press <b>Run</b> to replay the migration record by record. Each source
-              row is staged verbatim, tested against the rules in order, and then either written to
-              the target or held in quarantine with the rule that stopped it.</p>
-          </div>
+          <div class="stage" id="stage"></div>
           <div class="ticker" id="ticker"></div>
         </div>
       </section>
 
       <section class="card">
-        <div class="card-h"><h2>Rule ledger</h2><span class="eyebrow">click a rule to inspect records</span></div>
+        <div class="card-h"><h3>Rule ledger</h3><span class="eyebrow">select a rule to see its records</span></div>
         <div class="card-b">
-          <table>
+          <table class="rules-t">
             <thead><tr><th>Rule</th><th>Reason</th><th class="r">Count</th></tr></thead>
             <tbody id="rules"></tbody>
           </table>
@@ -646,27 +585,9 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
       </section>
     </div>
 
-    <div style="display:flex;flex-direction:column;gap:22px">
+    <div class="col">
       <section class="card">
-        <div class="card-h">
-          <h2>Financial control total</h2>
-          <span class="pill idle" id="bal-pill">PENDING</span>
-        </div>
-        <div class="card-b">
-          <div class="ledger">
-            <div class="lrow"><span class="lbl">Source file total</span><span class="amt num" id="m-src">0.00</span></div>
-            <div class="lrow minus"><span class="lbl">− Loaded to target</span><span class="amt num" id="m-loaded">0.00</span></div>
-            <div class="lrow minus"><span class="lbl">− Quarantined</span><span class="amt num" id="m-rej">0.00</span></div>
-            <div class="lrow total balanced"><span class="lbl">Residual</span><span class="amt num" id="m-res">0.00</span></div>
-          </div>
-          <p class="note" style="margin:14px 0 0">Row counts cannot catch a salary silently divided
-            by 12, because the row survives even though the value does not. Every pound either lands in the target or
-            is itemised in quarantine, so the residual holds at zero for the whole run.</p>
-        </div>
-      </section>
-
-      <section class="card">
-        <div class="card-h"><h2>Records by entity</h2><span class="eyebrow" id="ent-note">source → target</span></div>
+        <div class="card-h"><h3>Records by entity</h3><span class="eyebrow" id="ent-note">source → target</span></div>
         <div class="card-b">
           <div class="bars" id="bars"></div>
           <div class="legend">
@@ -674,30 +595,26 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
             <span><i class="sw" style="background:var(--warn)"></i>Loaded, flagged</span>
             <span><i class="sw" style="background:var(--bad)"></i>Rejected</span>
           </div>
-          <p class="note" style="margin:12px 0 0">Flagged records are loaded, not dropped: an org
-            with a missing parent becomes a root, a worker with an unresolvable manager loads
-            without a supervisor. Counting them as rejections would have overstated the worker
-            rejection rate at 9.4% instead of 3.9%.</p>
         </div>
       </section>
 
       <section class="card">
-        <div class="card-h"><h2>Effective-dating integrity</h2><span class="pill idle" id="int-pill">NOT RUN</span></div>
+        <div class="card-h"><h3>Effective-dating integrity</h3><span class="pill idle" id="int-pill">NOT RUN</span></div>
         <div class="card-b">
           <div class="checks" id="checks"></div>
-          <p class="note" style="margin:13px 0 0">Run against the loaded target after the load
-            completes, not during it. Overlap is real interval comparison: 1 to 31 March and
-            15 March to 14 April have different start dates and still overlap.</p>
+          <p class="note">Run against the loaded target after the load completes. Overlap is
+            real interval comparison: 1 to 31 March and 15 March to 14 April have different
+            start dates and still overlap.</p>
         </div>
       </section>
     </div>
   </div>
 
-
   <div class="sec-h">
+    <span class="idx">05</span>
     <h2>Data browser</h2>
     <p>The same records before the load, after it, and the ones that never made it,
-       filling up as the run plays.</p>
+      filling up as the run plays. Select an After row to compare it with its source.</p>
   </div>
   <section class="card">
     <div class="tabs" role="tablist">
@@ -713,59 +630,43 @@ table.data tr.r[aria-expanded="true"] td{background:var(--chrome-soft)}
         <button class="chip" data-ent="worker" aria-pressed="false">Workers</button>
         <button class="chip" data-ent="compensation" aria-pressed="false">Compensation</button>
       </div>
-      <input class="search" id="search" type="search" placeholder="filter by id, name, rule…" aria-label="Filter records">
+      <input class="search" id="search" type="search" placeholder="Filter by id, name, rule…" aria-label="Filter records">
       <span class="shown" id="shown"></span>
     </div>
     <div class="dwrap"><table class="data"><thead id="dhead"></thead><tbody id="dbody"></tbody></table></div>
     <div class="empty-state" id="dempty" hidden></div>
   </section>
 
-
-
   <div class="sec-h">
+    <span class="idx">06</span>
     <h2>Production equivalents</h2>
     <p>What a real Workday programme uses at each step, and what stands in for it here.</p>
   </div>
   <section class="card">
     <div class="card-b">
       <details class="tools-details">
-        <summary>Show the tool mapping (names are illustrative of the industry, not claimed experience)</summary>
-        <p class="docs-note" id="tools-note"></p>
+        <summary>Show the tool mapping <span class="eyebrow">names are illustrative of the industry, not claimed experience
+          <svg class="ic chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span></summary>
+        <p class="note" id="tools-note"></p>
         <div id="tools"></div>
       </details>
     </div>
   </section>
 
-  <div class="sec-h" id="docs">
-    <h2>Validity checks</h2>
-    <p>Re-derived from the database and the source files, without importing the pipeline.</p>
-  </div>
-  <section class="card">
-    <div class="card-b">
-      <p class="docs-note">reconcile.py reports what the run did. These ask whether what it did
-        holds together, and they are written not to import the loader, so a bug shared between
-        the loader and its own reconciliation cannot hide from them. A defect already documented
-        in the README is marked KNOWN rather than FAIL, so the harness stays usable as a gate.</p>
-      <pre class="checks-out">__VALIDATION__</pre>
+  <footer class="foot">
+    <span class="eyebrow">Notes</span>
+    <div>
+      <p><b>What this is.</b> A replay of one deterministic run over synthetic data. The counts,
+        the money and every rejection come from the pipeline's own SQLite output, exported after
+        the run, so nothing here is re-narrated by hand.</p>
+      <p><b>What it is not.</b> The target is Workday-<i>shaped</i> and has never been loaded
+        into a Workday tenant. There is no EIB or iLoad file format, no incremental or delta
+        load, and the cleansing rules were asserted in code rather than agreed with data owners.</p>
+      <p>How it works, the validity checks and the known issues are in the
+        <a href="docs.html">documentation</a>. A plain-English version is in the <a href="faq.html">FAQ</a>.</p>
     </div>
-  </section>
-
-  <div class="sec-h">
-    <h2>Documentation</h2>
-    <p>The project README, rendered in full. For a plain-English explanation with no code,
-      see the <a href="faq.html">FAQ</a>.</p>
-  </div>
-  <section class="card">
-    <div class="card-b"><div class="docs">__DOCS__</div></div>
-  </section>
-
-  <p class="foot"><b>What this is.</b> A replay of one deterministic run over synthetic data. The
-  counts, the money and every rejection come from the pipeline's own SQLite output, exported after
-  the run, so nothing here is re-narrated by hand. <b>What it is not.</b> the target is
-  Workday-<i>shaped</i> and has never been loaded into a Workday tenant, there is no EIB or iLoad
-  file format, no incremental or delta load, and the cleansing rules were asserted in code rather
-  than agreed with data owners.</p>
-</div>
+  </footer>
+</main>
 
 <script>
 const RUN = __RUN_DATA__;
@@ -828,6 +729,8 @@ function compute(n){
   return st;
 }
 
+const SRC_TOTAL = compute(N).money.src || 1;
+
 /* ---- static scaffolding ---- */
 $("run-id").textContent = RUN.run_id;
 $("run-at").textContent = RUN.started_at.replace("T", " ");
@@ -886,14 +789,26 @@ function render(){
   const sp = $("run-status"); sp.textContent = st8[0]; sp.className = "pill " + st8[1];
   $("stage-phase").textContent = pos === 0 ? "waiting" : pos < N ? `record ${pos} of ${N}` : "load complete";
 
+  $("scrub").style.setProperty("--p", (pos / N * 100) + "%");
+
   $("m-src").textContent = money(st.money.src);
   $("m-loaded").textContent = money(st.money.loaded);
   $("m-rej").textContent = money(st.money.rej);
   const res = st.money.src - st.money.loaded - st.money.rej;
   $("m-res").textContent = money(res);
+  $("m-res-row").textContent = money(res);
+  $("m-res").className = "ct-big" + (pos === 0 ? "" : res === 0 ? " ok" : " bad");
   const bp = $("bal-pill");
   bp.textContent = pos === 0 ? "PENDING" : res === 0 ? "BALANCES" : "OUT BY " + money(res);
   bp.className = "pill " + (pos === 0 ? "idle" : res === 0 ? "ok" : "bad");
+  // Shares of the money seen so far, and the bar against the whole file's total,
+  // so the bar fills as the run plays and any gap would be visible as one.
+  const pct = c => st.money.src ? (c / st.money.src * 100).toFixed(1) + "%" : "";
+  $("p-loaded").textContent = pct(st.money.loaded);
+  $("p-rej").textContent = pct(st.money.rej);
+  $("cb-loaded").style.width = (st.money.loaded / SRC_TOTAL * 100) + "%";
+  $("cb-rej").style.width = (st.money.rej / SRC_TOTAL * 100) + "%";
+  $("cb-read").textContent = Math.round(st.money.src / SRC_TOTAL * 100) + "% of the source total processed";
 
   ENTS.forEach(e => {
     const b = st.ent[e.key], tot = e.source;
@@ -960,7 +875,7 @@ function fieldRow(k, v){
 function renderStage(){
   const st = $("stage");
   if (pos === 0){
-    st.innerHTML = `<p class="note">Press <b>Run</b> to replay the migration record by record.
+    st.innerHTML = `<p class="empty-note">Press <b>Run</b> to replay the migration record by record.
       Each source row is staged verbatim, tested against the rules in order, and then either
       written to the target or held in quarantine with the rule that stopped it.</p>`;
     return;
@@ -1220,6 +1135,31 @@ document.querySelectorAll(".chip").forEach(b => b.onclick = () => {
 });
 $("search").oninput = ev => { query = ev.target.value.trim().toLowerCase(); renderBrowser(true); };
 
+/* ---- opening figures ----
+   Properties of the finished run, like the before-and-after table, so they do
+   not follow the scrubber. They count up once on load where motion is allowed. */
+const FIN = compute(N);
+const held = Object.values(FIN.ent).reduce((a, b) => a + b.rejected + b.flagged, 0);
+$("h-records").textContent = N.toLocaleString("en-GB");
+$("s-res").textContent = money(FIN.money.src - FIN.money.loaded - FIN.money.rej);
+function countUp(el, to){
+  const fmt = v => Math.round(v).toLocaleString("en-GB");
+  if (!document.documentElement.classList.contains("motion")){ el.textContent = fmt(to); return; }
+  const t0 = performance.now() + 450, dur = 1400;
+  (function step(now){
+    const k = Math.max(0, Math.min(1, (now - t0) / dur));
+    el.textContent = fmt(to * (1 - Math.pow(1 - k, 3)));
+    if (k < 1) requestAnimationFrame(step);
+  })(performance.now());
+}
+countUp($("s-in"), N);
+countUp($("s-loaded"), AFTER_ROWS.length);
+countUp($("s-held"), held);
+$("cta-play").onclick = () => {
+  $("replay").scrollIntoView({behavior:"smooth", block:"center"});
+  if (!playing){ if (pos >= N) pos = 0; setPlaying(true); render(); }
+};
+
 /* ---- production equivalents ---- */
 $("tools-note").textContent = TOOLS.note;
 $("tools").innerHTML = TOOLS.stages.map(st => `
@@ -1232,37 +1172,6 @@ $("tools").innerHTML = TOOLS.stages.map(st => `
     <span class="tools">${st.tools.map(t =>
       `<span class="tool"><i>${esc(t.m)}</i>${esc(t.n)}</span>`).join("")}</span>
   </div>`).join("");
-
-/* ---- theme ----
-   Two states, light and dark, always stamped explicitly on the root element.
-   The first visit takes its cue from the operating system so nobody is thrown
-   into the wrong one, and after that the viewer's own choice wins. It is a
-   per-viewer convenience, so localStorage is the right home for it, and every
-   access is guarded because it throws outright in some embedding contexts. */
-const THEMES = ["Light", "Dark"];
-let themeIx = 0;
-try {
-  const saved = localStorage.getItem("hrm-theme");
-  themeIx = THEMES.indexOf(saved);
-  if (themeIx < 0) throw new Error("no saved choice");
-} catch (e) {
-  themeIx = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? 1 : 0;
-}
-// the icon shows what a click switches to, which is the other one
-const THEME_ICON = {Light:"#i-moon", Dark:"#i-sun"};
-function applyTheme(){
-  const t = THEMES[themeIx];
-  if (t === "System") document.documentElement.removeAttribute("data-theme");
-  else document.documentElement.setAttribute("data-theme", t.toLowerCase());
-  $("theme-icon").setAttribute("href", THEME_ICON[t]);
-  const btn = $("theme");
-  const other = THEMES[(themeIx + 1) % THEMES.length];
-  btn.title = "Switch to " + other.toLowerCase() + " mode";
-  btn.setAttribute("aria-label", "Switch to " + other.toLowerCase() + " mode");
-  try { localStorage.setItem("hrm-theme", t); } catch (e) { /* not available */ }
-}
-$("theme").onclick = () => { themeIx = (themeIx + 1) % THEMES.length; applyTheme(); };
-applyTheme();
 
 render();
 </script>

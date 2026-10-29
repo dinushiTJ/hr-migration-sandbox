@@ -6,7 +6,8 @@ being used at 10px, and the reason they survived that long is that contrast is
 invisible to the person who chose the colours. A number is the only honest way
 to look at it, so this reads the tokens out of the template and computes them.
 
-The token values are parsed from viz/template.html rather than restated here,
+The token values are parsed from viz/base.css, the stylesheet every published
+page shares, rather than restated here,
 so the check cannot pass against colours the page no longer uses. The pairings
 are declared, because which foreground is drawn on which background is a fact
 about the CSS that no regex is going to establish reliably. That is the weak
@@ -21,7 +22,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TEMPLATE = ROOT / "viz" / "template.html"
+TEMPLATE = ROOT / "viz" / "base.css"
 
 AA_NORMAL = 4.5
 
@@ -68,7 +69,9 @@ def themes(css):
             continue
         if selector.strip() == ":root":
             light = tokens
-        elif "dark" in selector:
+        # the media-query copy is selected as "not light", so match that too;
+        # testing for "dark" alone silently skipped it and the two were never compared
+        elif "dark" in selector or 'not([data-theme="light"])' in selector:
             dark.append(tokens)
 
     if light is None or not dark:

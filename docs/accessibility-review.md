@@ -109,7 +109,8 @@ Room", which names the destination.
 
 Contrast is invisible to the person choosing the colours, which is how this defect lasted
 as long as it did. So the fix is enforced rather than remembered: `src/check_contrast.py`
-parses the theme tokens out of `viz/template.html`, computes all 42 foreground and
+parses the theme tokens out of `viz/base.css` (the stylesheet all three published pages
+now share; it was `viz/template.html` at the time of this review), computes all 42 foreground and
 background pairs across both themes, and exits non-zero if any falls below 4.5:1. It runs
 in `.github/workflows/pages.yml` as a deployment gate, alongside the existing data
 validation, so a colour change that breaks AA fails the build instead of shipping.

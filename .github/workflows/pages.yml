@@ -46,6 +46,8 @@ jobs:
           python src/build_faq.py
           mkdir -p _site
           cp out/control_room.html _site/index.html
+          cp out/control_room.html _site/control_room.html
+          cp out/docs.html _site/docs.html
           cp out/faq.html _site/faq.html
 
       - name: Configure Pages

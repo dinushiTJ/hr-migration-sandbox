@@ -1,0 +1,226 @@
+/* Shared by the control room, the documentation page and the FAQ, so the three
+   pages read as one site and a token is only ever defined once.
+
+   Editorial and near-monochrome: warm off-white or near-black paper, hairline
+   rules, mono uppercase labels. Colour is saved for the outcome palette and one
+   steel-blue accent for pipeline steps, so where it appears it means something:
+     teal  = reached the target       red  = rejected, or broken in the source
+     amber = changed, or loaded flagged  blue = a pipeline step
+   src/check_contrast.py parses the hex tokens below and holds every text colour
+   to 4.5:1 on every background, in both themes. */
+:root{
+  --paper:#f1eee7; --surface:#f8f6f1; --surface-2:#ebe7de; --ink:#1c1c1a; --muted:#55534e;
+  --faint:#5f5d57; --line:#dcd7cc; --line-strong:#c4beb1;
+  --chrome:#2f4a6e; --chrome-soft:#dfe4ea;
+  --ok:#0b6b60; --ok-soft:#d8e9e2; --bad:#a8291f; --bad-soft:#f2dcd5;
+  --warn:#875000; --warn-soft:#f0e2c6;
+  --on-chrome:#ffffff;
+  --glow-chrome:rgba(47,74,110,.12);
+  --shadow-lg:0 18px 40px -30px rgba(28,28,26,.45);
+}
+@media (prefers-color-scheme:dark){ :root:not([data-theme="light"]){
+  --paper:#0a0a0a; --surface:#111111; --surface-2:#191919; --ink:#ededea; --muted:#a3a19b;
+  --faint:#8b8984; --line:#232322; --line-strong:#353533;
+  --chrome:#9fb6d6; --chrome-soft:#1a2029;
+  --ok:#5ccfb5; --ok-soft:#0f2622; --bad:#ff7f70; --bad-soft:#2e1514;
+  --warn:#e6b264; --warn-soft:#2a2112;
+  --on-chrome:#0a0a0a;
+  --glow-chrome:rgba(159,182,214,.14);
+  --shadow-lg:0 18px 40px -26px rgba(0,0,0,.9);
+}}
+:root[data-theme="dark"]{
+  --paper:#0a0a0a; --surface:#111111; --surface-2:#191919; --ink:#ededea; --muted:#a3a19b;
+  --faint:#8b8984; --line:#232322; --line-strong:#353533;
+  --chrome:#9fb6d6; --chrome-soft:#1a2029;
+  --ok:#5ccfb5; --ok-soft:#0f2622; --bad:#ff7f70; --bad-soft:#2e1514;
+  --warn:#e6b264; --warn-soft:#2a2112;
+  --on-chrome:#0a0a0a;
+  --glow-chrome:rgba(159,182,214,.14);
+  --shadow-lg:0 18px 40px -26px rgba(0,0,0,.9);
+}
+:root{
+  --sans:"Geist",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --radius:8px; --page:1200px; --gutter:24px;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{color-scheme:dark}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%; scroll-padding-top:96px}
+html,body{max-width:100%; overflow-x:clip}
+body{
+  margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+  font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:var(--sans); font-weight:500; text-wrap:balance; margin:0}
+.mono,.num{font-family:var(--mono); font-variant-numeric:tabular-nums}
+.wrap{max-width:var(--page); margin:0 auto; padding:0 var(--gutter) 96px; min-width:0}
+.eyebrow{font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--faint)}
+.ic{width:16px; height:16px; flex:none; stroke:currentColor; fill:none; stroke-width:1.6;
+  stroke-linecap:round; stroke-linejoin:round; vertical-align:-3px}
+button{font:inherit; cursor:pointer; color:inherit}
+:focus-visible{outline:2px solid var(--chrome); outline-offset:2px}
+.skip{position:absolute; left:-9999px; top:8px; z-index:50; padding:10px 14px; border-radius:var(--radius);
+  background:var(--surface); color:var(--ink); border:1px solid var(--chrome)}
+.skip:focus{left:8px}
+
+/* Switched on for a moment while the theme changes, so colours cross-fade
+   rather than snap. Left on, it would also animate every replay frame. */
+.theme-anim, .theme-anim *{transition:background-color .25s ease, border-color .25s ease,
+  color .25s ease, fill .25s ease, stroke .25s ease!important}
+
+/* ---------- site navigation ---------- */
+.nav{position:sticky; top:0; z-index:40; border-bottom:1px solid var(--line);
+  background:color-mix(in srgb, var(--paper) 86%, transparent);
+  -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px)}
+.nav-in{max-width:var(--page); margin:0 auto; padding:0 var(--gutter); height:60px;
+  display:flex; align-items:center; gap:24px}
+.mark{display:flex; align-items:center; gap:10px; color:var(--ink); text-decoration:none;
+  font-size:14.5px; font-weight:500; letter-spacing:-.01em; white-space:nowrap; min-width:0}
+.mark i{width:28px; height:28px; border-radius:7px; background:var(--ink); color:var(--paper);
+  display:grid; place-items:center; flex:none}
+.mark i .ic{width:15px; height:15px}
+.nav-links{display:flex; gap:4px; margin-left:auto}
+.nav-links a{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); text-decoration:none; padding:7px 12px;
+  border-radius:999px; white-space:nowrap}
+.nav-links a:hover{color:var(--ink); background:var(--surface-2)}
+.nav-links a[aria-current="page"]{color:var(--ink); background:var(--surface);
+  box-shadow:inset 0 0 0 1px var(--line-strong)}
+.theme-btn{width:34px; height:34px; padding:0; border-radius:999px; flex:none;
+  display:inline-flex; align-items:center; justify-content:center;
+  border:1px solid var(--line-strong); background:transparent; color:var(--muted)}
+.theme-btn:hover{color:var(--ink); border-color:var(--ink)}
+.theme-btn .i-sun{display:none}
+:root[data-theme="dark"] .theme-btn .i-sun{display:block}
+:root[data-theme="dark"] .theme-btn .i-moon{display:none}
+@media (max-width:640px){
+  :root{--gutter:16px}
+  .nav-in{gap:12px}
+  .mark span{display:none}
+  .nav-links a{padding:7px 9px; letter-spacing:.06em}
+}
+
+/* ---------- page heading ---------- */
+/* Everything on a page hangs off one left edge: hero, section headings and
+   cards all start at the gutter. Structure comes from spacing, not rules. */
+.hero{padding:64px 0 32px}
+.hero h1{font-size:clamp(34px,5vw,52px); font-weight:400; letter-spacing:-.035em; line-height:1.04}
+.hero .sub{color:var(--muted); font-size:16px; line-height:1.55; max-width:60ch; margin:16px 0 0}
+.meta{display:flex; flex-wrap:wrap; align-items:center; gap:8px 24px; margin-top:24px;
+  font-family:var(--mono); font-size:12.5px; color:var(--muted)}
+.meta > div{display:flex; align-items:center; gap:8px}
+.meta .v{color:var(--ink); font-variant-numeric:tabular-nums}
+
+/* ---------- section heading ---------- */
+.sec-h{margin:88px 0 20px}
+.sec-h .idx{display:block; font-family:var(--mono); font-size:11.5px; letter-spacing:.12em;
+  color:var(--faint); margin-bottom:8px}
+.sec-h h2{font-size:clamp(24px,3vw,28px); font-weight:400; letter-spacing:-.025em; line-height:1.15}
+.sec-h p{margin:8px 0 0; color:var(--muted); font-size:14.5px; line-height:1.6; max-width:64ch}
+@media (max-width:640px){.sec-h{margin-top:64px}}
+
+/* ---------- pills, buttons, cards ---------- */
+.pill{display:inline-flex; align-items:center; justify-content:center; gap:7px; flex:none;
+  height:24px; padding:0 10px 0 9px; border-radius:999px; white-space:nowrap;
+  font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.08em}
+.pill::before{content:""; width:6px; height:6px; border-radius:50%; background:currentColor; flex:none}
+.pill.ok{background:var(--ok-soft); color:var(--ok)}
+.pill.bad{background:var(--bad-soft); color:var(--bad)}
+.pill.warn{background:var(--warn-soft); color:var(--warn)}
+.pill.warn::before{animation:pulse 1.2s ease-in-out infinite}
+.pill.idle{background:transparent; color:var(--faint); box-shadow:inset 0 0 0 1px var(--line-strong)}
+@keyframes pulse{0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.35; transform:scale(.7)}}
+
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; height:36px;
+  padding:0 16px; border-radius:999px; border:1px solid var(--line-strong);
+  background:var(--surface); color:var(--ink); font-family:var(--mono); font-size:12px;
+  font-weight:500; letter-spacing:.06em; text-transform:uppercase; text-decoration:none;
+  transition:background .12s, border-color .12s}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--ink); border-color:var(--ink); color:var(--paper)}
+.btn.primary:hover{opacity:.9}
+
+.card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+  overflow:hidden; min-width:0}
+.card-h{display:flex; justify-content:space-between; align-items:center; gap:16px;
+  height:52px; padding:0 20px; border-bottom:1px solid var(--line)}
+.card-h h3{font-family:var(--mono); font-size:11.5px; font-weight:500; letter-spacing:.12em;
+  text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.card-b{padding:20px; min-width:0}
+.note{font-size:13px; color:var(--muted); line-height:1.6; margin:16px 0 0}
+.note b{color:var(--ink); font-weight:500}
+
+/* ---------- long-form text (README and FAQ) ---------- */
+.prose{font-size:16px; line-height:1.72; color:var(--ink); max-width:72ch; min-width:0}
+.prose > *:first-child{margin-top:0}
+.prose h1{font-size:clamp(32px,4.4vw,44px); font-weight:400; letter-spacing:-.03em; line-height:1.08;
+  margin:0 0 16px}
+.prose h2{font-size:26px; font-weight:400; letter-spacing:-.02em; line-height:1.2;
+  margin:64px 0 16px; padding-top:20px; border-top:1px solid var(--line-strong)}
+.prose h3{font-size:18px; font-weight:500; letter-spacing:-.01em; margin:40px 0 10px}
+.prose h4{font-size:16px; font-weight:500; margin:28px 0 8px}
+.prose h2, .prose h3{position:relative}
+.prose .anchor{position:absolute; left:-1.4em; color:var(--faint); text-decoration:none;
+  opacity:0; transition:opacity .12s; font-weight:400}
+.prose h2 .anchor{top:20px}
+.prose :is(h2,h3):hover .anchor, .prose .anchor:focus{opacity:1}
+.prose p{margin:0 0 16px}
+.prose ul, .prose ol{margin:0 0 18px; padding-left:22px}
+.prose li{margin-bottom:8px; padding-left:4px}
+.prose li::marker{color:var(--faint)}
+.prose strong{font-weight:600}
+.prose a{color:var(--chrome); text-decoration:underline; text-decoration-thickness:1px;
+  text-underline-offset:3px}
+.prose a:hover{text-decoration-thickness:2px}
+.prose code{font-family:var(--mono); font-size:.86em; background:var(--surface-2);
+  border:1px solid var(--line); border-radius:4px; padding:1px 5px; overflow-wrap:anywhere}
+.prose pre{position:relative; background:var(--surface); border:1px solid var(--line);
+  border-radius:var(--radius); padding:16px 18px; overflow-x:auto; margin:0 0 20px}
+.prose pre code{background:none; border:0; padding:0; font-size:13px; line-height:1.6;
+  overflow-wrap:normal}
+.prose hr{border:0; border-top:1px solid var(--line); margin:40px 0}
+.prose hr + h2{border-top:0; padding-top:0; margin-top:0}
+.prose blockquote{margin:0 0 20px; padding:14px 18px; border:1px solid var(--line);
+  border-left:3px solid var(--chrome); border-radius:var(--radius); background:var(--surface);
+  font-size:14.5px; line-height:1.65}
+.prose blockquote p:last-child{margin-bottom:0}
+.prose .tscroll{overflow-x:auto; margin:0 0 20px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--surface)}
+.prose table{width:100%; border-collapse:collapse; font-size:14px; line-height:1.5}
+.prose th{text-align:left; padding:10px 14px; white-space:nowrap; background:var(--surface-2);
+  border-bottom:1px solid var(--line-strong); font-family:var(--mono); font-size:11px;
+  font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted)}
+.prose td{padding:10px 14px; border-bottom:1px solid var(--line); vertical-align:top}
+.prose tr:last-child td{border-bottom:0}
+.prose table:not(:has(thead)) td:first-child{white-space:nowrap; color:var(--muted)}
+
+/* ---------- motion ----------
+   Only under html.motion, which viz/motion.js sets when the viewer has not asked
+   for reduced motion. Without it every element simply renders in place. */
+html.motion{scroll-behavior:smooth}
+.motion .reveal{opacity:0; transform:translateY(16px);
+  transition:opacity .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms), transform .7s cubic-bezier(.2,.7,.2,1) var(--d,0ms)}
+.motion .reveal.in{opacity:1; transform:none}
+/* diagrams draw left to right, the way records move through them */
+.motion .reveal .wipe{clip-path:inset(0 100% 0 0);
+  transition:clip-path 1.3s cubic-bezier(.65,0,.25,1) calc(var(--d,0ms) + 250ms)}
+.motion .reveal.in .wipe{clip-path:inset(0 0 0 0)}
+/* bars grow from their left edge */
+.motion .reveal .grow{transform:scaleX(0); transform-origin:left center;
+  transition:transform 1s cubic-bezier(.65,0,.25,1) calc(var(--d,0ms) + var(--gd,300ms))}
+.motion .reveal.in .grow{transform:scaleX(1)}
+/* the page heading rises in on load, line by line */
+.motion .hero > *{animation:rise .8s cubic-bezier(.2,.7,.2,1) both}
+.motion .hero > *:nth-child(2){animation-delay:.08s}
+.motion .hero > *:nth-child(3){animation-delay:.16s}
+.motion .hero > *:nth-child(4){animation-delay:.24s}
+.motion .hero > *:nth-child(5){animation-delay:.32s}
+.motion .hero + .transport{animation:rise .8s cubic-bezier(.2,.7,.2,1) .4s both}
+@keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
+.nav-links a, .theme-btn, .btn{transition:color .2s, background-color .2s, border-color .2s, opacity .2s}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important}
+  html{scroll-behavior:auto!important}}

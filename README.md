@@ -34,10 +34,10 @@ change nothing about the pipeline:
 
 ```
 python3 src/export_viz.py         # export the completed run as JSON
-python3 src/build_viz.py          # render out/control_room.html
+python3 src/build_viz.py          # render out/control_room.html and out/docs.html
 ```
 
-### At a glance
+## At a glance
 
 |                    |                                                                       |
 | ------------------ | --------------------------------------------------------------------- |
@@ -393,10 +393,15 @@ All four return zero:
 
 `src/export_viz.py` exports the completed run to `out/run.json`, and
 `src/build_viz.py` injects it into `viz/template.html` to produce a
-self-contained `out/control_room.html` (679 KB, no external assets). CI
-publishes it as the [live replay](https://dinushitj.github.io/hr-migration-sandbox/).
+self-contained `out/control_room.html` (715 KB; the only external request is
+for the web fonts). CI publishes it as the
+[live replay](https://dinushitj.github.io/hr-migration-sandbox/).
 
-It opens with a flow figure of the whole pipeline: three sources, staged
+The page opens with the financial control total: the residual as a large figure,
+the source, loaded and quarantined amounts beside it, and a bar that fills as the
+run plays.
+
+Below it is a flow figure of the whole pipeline: three sources, staged
 verbatim, cleansed, validated, and then either loaded or quarantined. Its counts
 are driven from the same computed state as the panels below it, so the picture
 cannot drift from the numbers, and they fill in as the run plays. The figure
@@ -416,10 +421,17 @@ Four tabs browse the same records: **Before** (source as received), **After**
 fields highlighted), **Quarantine** (all 113 held-back records), and
 **Cleansed** (all 1,633 transformations with before and after).
 
-The page also carries its own documentation: this README rendered in full, and
-the live output of the validity checks, both injected at build time. The checks
-are executed during the build rather than pasted in, so the page cannot show a
-green result from an earlier state of the code.
+The documentation is a separate page, `out/docs.html`, built in the same step:
+this README with a contents sidebar, search, and the live output of the validity
+checks. After the overview it has four diagrams for the parts that are hard to follow in
+prose (the control total, flagged records, overlapping periods and the cascade),
+and their figures come from the run rather than being typed in. The checks are
+executed during the build rather than pasted in, so the page cannot show a green
+result from an earlier state of the code.
+
+All three published pages (replay, docs, FAQ) share `viz/base.css` and
+`viz/theme.js`, so they use the same colour tokens and the same light or dark
+choice.
 
 The page is generated, never hand-written, so it cannot drift from the run. The
 export reconstructs a per-record event stream by joining staged raw records back
@@ -576,17 +588,23 @@ src/generate_sources.py       three inconsistent legacy sources
 src/migrate.py                stage, cleanse, validate, load
 src/reconcile.py              reconciliation report
 src/validate.py               independent validity checks
-src/markdown_lite.py          minimal Markdown renderer for the docs on the page
+src/markdown_lite.py          minimal Markdown renderer for the docs and FAQ pages
 src/export_viz.py             export a completed run to JSON
-src/build_viz.py              render the visual replay
+src/build_viz.py              render the visual replay and the docs page
+src/build_faq.py              render the FAQ page
+src/site_chrome.py            head, navigation and shared assets for every page
+src/check_contrast.py         WCAG AA contrast check on the colour tokens
 sql/schema.sql                staging, target, audit and quarantine tables
+viz/base.css                  colour tokens and styles shared by all pages
+viz/theme.js                  light and dark toggle shared by all pages
 viz/template.html             replay page template
+viz/docs.html                 documentation page template
 viz/tools.json                production-equivalents table for README and page
 SECURITY.md                   data handling and publication guidance
 data/                         generated sources (ignored by Git)
-out/                          SQLite target, run.json, control_room.html (ignored by Git)
+out/                          SQLite target, run.json, the three pages (ignored by Git)
 ```
 
 Artefact sizes: `hris_workers.csv` 23 KB, `payroll_export.csv` 37 KB,
 `org_hierarchy.xml` 1 KB, `hr_migration.db` 644 KB, `run.json` 635 KB,
-`control_room.html` 679 KB.
+`control_room.html` 715 KB, `docs.html` 76 KB.

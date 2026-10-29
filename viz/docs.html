@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation: HR Migration Sandbox</title>
+<meta name="description" content="How the HR data migration sandbox works: pipeline stages,
+target model, results, validity checks, known issues and limitations.">
+__HEAD__
+<style>
+/* Documentation layout. Type and tokens come from viz/base.css; this file only
+   adds the sidebar, search and the explanatory figures. */
+.docs-layout{display:grid; grid-template-columns:232px minmax(0,1fr); gap:64px; padding-top:48px}
+.side{position:sticky; top:84px; align-self:start; max-height:calc(100vh - 100px); overflow:auto;
+  padding:0 4px 24px 0; scrollbar-width:thin}
+.side-search{position:relative; margin-bottom:20px}
+.side-search input{width:100%; height:36px; padding:0 40px 0 14px; border-radius:999px;
+  border:1px solid var(--line-strong); background:var(--surface); color:var(--ink);
+  font-family:var(--mono); font-size:12.5px}
+.side-search input::placeholder{color:var(--faint)}
+.side-search kbd{position:absolute; right:10px; top:8px; font-family:var(--mono); font-size:11px;
+  color:var(--faint); border:1px solid var(--line-strong); border-radius:4px; padding:0 5px;
+  line-height:18px}
+.search-read{font-family:var(--mono); font-size:11px; color:var(--faint); margin:-8px 0 16px 14px}
+.search-read:empty{display:none}
+.toc{display:flex; flex-direction:column; gap:1px; border-left:1px solid var(--line)}
+.toc a{display:block; padding:5px 12px; margin-left:-1px; border-left:1px solid transparent;
+  color:var(--muted); text-decoration:none; font-size:13.5px; line-height:1.4}
+.toc a:hover{color:var(--ink)}
+.toc a.active{color:var(--ink); border-left-color:var(--ink); font-weight:500}
+.toc a.sub{padding-left:26px; font-size:12.5px; display:none}
+.toc a.sub.show{display:block}
+.toc a[hidden]{display:none}
+.side-foot{margin-top:24px; padding-top:16px; border-top:1px solid var(--line);
+  display:flex; flex-direction:column; gap:8px}
+.side-foot a{font-family:var(--mono); font-size:11.5px; letter-spacing:.06em; color:var(--muted);
+  text-decoration:none; text-transform:uppercase}
+.side-foot a:hover{color:var(--ink)}
+.toc-toggle{display:none}
+
+/* every h2 already draws its own rule, so the README's --- separators would double it */
+.prose hr{display:none}
+.prose img{vertical-align:middle; max-width:100%}
+.content mark{background:var(--warn-soft); color:var(--ink); border-radius:2px; padding:0 1px}
+.content section[hidden]{display:none}
+.no-match{display:none; padding:40px 0; color:var(--muted)}
+.no-match.show{display:block}
+
+.prose pre .copy{position:absolute; top:8px; right:8px; height:26px; padding:0 10px;
+  border-radius:999px; border:1px solid var(--line-strong); background:var(--surface-2);
+  color:var(--muted); font-family:var(--mono); font-size:11px; opacity:0; transition:opacity .12s}
+.prose pre:hover .copy, .prose pre .copy:focus{opacity:1}
+
+/* ---------- key ideas ---------- */
+.ideas{display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:0 0 24px; max-width:none}
+.idea{border:1px solid var(--line); border-radius:var(--radius); background:var(--surface);
+  padding:20px; display:flex; flex-direction:column; gap:16px; min-width:0}
+.idea h3{margin:0; font-size:16px}
+.idea .idx{font-family:var(--mono); font-size:11px; letter-spacing:.12em; color:var(--faint);
+  display:block; margin-bottom:6px}
+.idea p{font-size:14px; line-height:1.6; color:var(--muted); margin:0}
+.idea p b{color:var(--ink); font-weight:500}
+.idea svg{display:block; width:100%; height:auto}
+.idea svg text{font-family:var(--mono); fill:var(--muted); font-size:11px}
+.idea svg .strong{fill:var(--ink); font-weight:500}
+.idea svg .t-ok{fill:var(--ok)} .idea svg .t-bad{fill:var(--bad)} .idea svg .t-warn{fill:var(--warn)}
+.idea svg .box{fill:var(--paper); stroke:var(--line-strong)}
+.idea svg .ln{stroke:var(--line-strong); fill:none; stroke-width:1.5}
+.idea svg .ln-ok{stroke:var(--ok); fill:none; stroke-width:2}
+.idea svg .ln-bad{stroke:var(--bad); fill:none; stroke-width:2}
+.idea svg .ln-warn{stroke:var(--warn); fill:none; stroke-width:2}
+.idea svg .axis{stroke:var(--line-strong)}
+@media (max-width:760px){.ideas{grid-template-columns:1fr}}
+
+/* the money equation is plain HTML, so the figures stay selectable text */
+.eq{display:flex; flex-direction:column; gap:8px}
+.eq .bar{display:flex; height:22px; border-radius:4px; overflow:hidden}
+.eq .bar i{display:block; height:100%}
+.eq .rows{display:grid; grid-template-columns:auto 1fr; gap:4px 0; font-family:var(--mono);
+  font-size:12.5px; margin-top:8px}
+.eq .rows span:nth-child(odd){color:var(--muted); display:flex; align-items:center; gap:8px}
+.eq .rows span:nth-child(even){text-align:right; font-variant-numeric:tabular-nums; padding-left:16px}
+.eq .rows .tot{border-top:1px solid var(--ink); padding-top:6px; margin-top:4px; color:var(--ink)!important;
+  font-weight:500}
+.sw{width:8px; height:8px; border-radius:2px; display:inline-block; flex:none}
+
+.checks-out{font-family:var(--mono); font-size:12.5px; line-height:1.8; white-space:pre;
+  overflow-x:auto}
+.st{font-weight:600; padding:1px 6px; border-radius:999px; margin-right:6px; font-size:11px}
+.st.PASS{background:var(--ok-soft); color:var(--ok)}
+.st.FAIL{background:var(--bad-soft); color:var(--bad)}
+.st.KNOWN{background:var(--warn-soft); color:var(--warn)}
+
+@media (max-width:960px){
+  .docs-layout{grid-template-columns:minmax(0,1fr); gap:0; padding-top:24px}
+  .side{position:static; max-height:none; overflow:visible; padding:0; margin-bottom:32px}
+  .toc-toggle{display:flex; width:100%; justify-content:space-between; align-items:center;
+    height:40px; padding:0 14px; border:1px solid var(--line); border-radius:var(--radius);
+    background:var(--surface); font-family:var(--mono); font-size:12px; letter-spacing:.08em;
+    text-transform:uppercase}
+  .toc-wrap{display:none; margin-top:12px}
+  .side.open .toc-wrap{display:block}
+  .prose .anchor{display:none}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to the documentation</a>
+__NAV__
+
+<div class="wrap docs-layout">
+  <aside class="side" id="side" aria-label="Documentation">
+    <div class="side-search">
+      <input type="search" id="q" placeholder="Search the docs" aria-label="Search the documentation"
+             autocomplete="off">
+      <kbd aria-hidden="true">/</kbd>
+    </div>
+    <div class="search-read" id="q-read" aria-live="polite"></div>
+    <button class="toc-toggle" id="toc-toggle" type="button" aria-expanded="false" aria-controls="toc-wrap">
+      Contents <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></button>
+    <div class="toc-wrap" id="toc-wrap">
+      <nav class="toc" id="toc" aria-label="Contents"></nav>
+      <div class="side-foot">
+        <a href="control_room.html">Open the replay</a>
+        <a href="faq.html">Plain-English FAQ</a>
+        <a href="#content">Back to top</a>
+        <span class="eyebrow" style="margin-top:8px">Built from README.md</span>
+      </div>
+    </div>
+  </aside>
+
+  <main id="content" class="content" tabindex="-1">
+    <div class="prose" id="prose">
+__DOCS__
+    </div>
+    <p class="no-match" id="no-match">Nothing in the documentation matches that search.</p>
+  </main>
+</div>
+
+<template id="ideas-tpl">
+<h2 id="key-ideas">Key ideas</h2>
+<p>Four parts of the design are easier to see than to describe. The figures below come
+  from the same run as everything else on these pages.</p>
+<div class="ideas">
+
+  <figure class="idea" style="margin:0">
+    <div><span class="idx">01</span><h3>The control total must come to zero</h3></div>
+    <div class="eq" role="img" aria-label="Source total split into the amount loaded and the amount quarantined, with nothing left over.">
+      <div class="bar"><i style="width:100%;background:var(--line-strong)"></i></div>
+      <div class="bar"><i id="eq-l" style="background:var(--ok)"></i><i id="eq-r" style="background:var(--bad)"></i></div>
+      <div class="rows">
+        <span>Source file total</span><span id="eq-src"></span>
+        <span><i class="sw" style="background:var(--ok)"></i>− loaded to target</span><span id="eq-loaded"></span>
+        <span><i class="sw" style="background:var(--bad)"></i>− quarantined</span><span id="eq-rej"></span>
+        <span class="tot">= residual</span><span class="tot" id="eq-res"></span>
+      </div>
+    </div>
+    <p>Every dollar in the source either reaches the target or sits in quarantine with the
+      rule that stopped it. A value lost or changed in transit would show up as a non-zero
+      residual, even when the row counts match.</p>
+  </figure>
+
+  <figure class="idea" style="margin:0">
+    <div><span class="idx">02</span><h3>Flagged records take both paths</h3></div>
+    <svg viewBox="0 0 400 150" role="img" aria-label="A flagged record is written to the target and also recorded in quarantine.">
+      <defs>
+        <marker id="m-ok" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><polygon points="0,1 8,4 0,7" fill="var(--ok)"></polygon></marker>
+        <marker id="m-warn" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><polygon points="0,1 8,4 0,7" fill="var(--warn)"></polygon></marker>
+      </defs>
+      <rect class="box" x="4" y="50" width="128" height="50" rx="6"></rect>
+      <text class="strong" x="18" y="72">Flagged record</text>
+      <text class="t-warn" x="18" y="89" id="fl-n"></text>
+      <path class="ln-ok" d="M132,75 H170 V32 H250" marker-end="url(#m-ok)"></path>
+      <path class="ln-warn" d="M170,75 V118 H250" marker-end="url(#m-warn)"></path>
+      <rect class="box" x="256" y="10" width="140" height="44" rx="6"></rect>
+      <text class="t-ok" x="270" y="30">TARGET</text>
+      <text x="270" y="45">loaded</text>
+      <rect class="box" x="256" y="96" width="140" height="44" rx="6"></rect>
+      <text class="t-warn" x="270" y="116">QUARANTINE LOG</text>
+      <text x="270" y="131">fault recorded</text>
+    </svg>
+    <p>An org with a missing parent loads as a root; a worker with an unknown manager loads
+      without a supervisor. Both are also logged. Counting them as rejections would put the
+      worker rejection rate at <b id="fl-wrong"></b> instead of <b id="fl-right"></b>.</p>
+  </figure>
+
+  <figure class="idea" style="margin:0">
+    <div><span class="idx">03</span><h3>Different start dates can still overlap</h3></div>
+    <svg viewBox="0 0 400 150" role="img" aria-label="A period from 1 to 31 March and a period from 15 March to 14 April overlap from 15 to 31 March.">
+      <defs>
+        <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+          <rect width="6" height="6" fill="var(--bad-soft)"></rect><line x1="0" y1="0" x2="0" y2="6" stroke="var(--bad)" stroke-width="2"></line>
+        </pattern>
+      </defs>
+      <line class="axis" x1="10" y1="122" x2="390" y2="122"></line>
+      <line class="axis" x1="10" y1="118" x2="10" y2="126"></line>
+      <line class="axis" x1="200" y1="118" x2="200" y2="126"></line>
+      <line class="axis" x1="390" y1="118" x2="390" y2="126"></line>
+      <text x="10" y="142">1 Mar</text><text x="200" y="142" text-anchor="middle">1 Apr</text><text x="390" y="142" text-anchor="end">30 Apr</text>
+      <rect x="10" y="22" width="190" height="24" rx="4" fill="var(--chrome-soft)" stroke="var(--chrome)"></rect>
+      <text class="strong" x="18" y="38">1 to 31 March</text>
+      <rect x="102" y="62" width="182" height="24" rx="4" fill="var(--chrome-soft)" stroke="var(--chrome)"></rect>
+      <text class="strong" x="110" y="78">15 March to 14 April</text>
+      <rect x="102" y="96" width="98" height="12" rx="2" fill="url(#hatch)"></rect>
+      <text class="t-bad" x="210" y="106">overlap</text>
+    </svg>
+    <p>Comparing start dates alone would pass these two. The check compares whole intervals,
+      because Workday rejects a load whose compensation periods collide.
+      <b id="ov-n"></b></p>
+  </figure>
+
+  <figure class="idea" style="margin:0">
+    <div><span class="idx">04</span><h3>Rejecting a worker rejects their pay</h3></div>
+    <svg viewBox="0 0 400 150" role="img" aria-label="A rejected worker causes each of that worker's payroll rows to be rejected as well.">
+      <defs>
+        <marker id="m-bad" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><polygon points="0,1 8,4 0,7" fill="var(--bad)"></polygon></marker>
+      </defs>
+      <rect x="4" y="50" width="128" height="50" rx="6" fill="var(--bad-soft)" stroke="var(--bad)"></rect>
+      <text class="strong" x="18" y="72">Worker</text>
+      <text class="t-bad" x="18" y="89">rejected</text>
+      <path class="ln-bad" d="M132,75 H176 V26 H250" marker-end="url(#m-bad)" stroke-dasharray="4 4"></path>
+      <path class="ln-bad" d="M176,75 H250" marker-end="url(#m-bad)" stroke-dasharray="4 4"></path>
+      <path class="ln-bad" d="M176,75 V124 H250" marker-end="url(#m-bad)" stroke-dasharray="4 4"></path>
+      <g><rect class="box" x="256" y="12" width="140" height="28" rx="5"></rect><text x="268" y="30">pay period</text><text class="t-bad" x="386" y="30" text-anchor="end">CMP-001</text></g>
+      <g><rect class="box" x="256" y="61" width="140" height="28" rx="5"></rect><text x="268" y="79">pay period</text><text class="t-bad" x="386" y="79" text-anchor="end">CMP-001</text></g>
+      <g><rect class="box" x="256" y="110" width="140" height="28" rx="5"></rect><text x="268" y="128">pay period</text><text class="t-bad" x="386" y="128" text-anchor="end">CMP-001</text></g>
+    </svg>
+    <p>Pay rows for a worker who is not in the target cannot be loaded, so they are held
+      under their own rule rather than silently dropped. <b id="cc-n"></b></p>
+  </figure>
+</div>
+</template>
+
+<script>
+const DOC = __DOC_DATA__;
+const $ = id => document.getElementById(id);
+const prose = $("prose");
+
+/* ---- key ideas: after the overview and "At a glance", before the detail ---- */
+const anchor = prose.querySelector("#what-this-demonstrates") || prose.querySelectorAll("h2")[1] || null;
+prose.insertBefore($("ideas-tpl").content.cloneNode(true), anchor);
+
+const money = v => Number(v).toLocaleString("en-NZ", {minimumFractionDigits:2, maximumFractionDigits:2});
+const c = DOC.control;
+$("eq-src").textContent = money(c.source);
+$("eq-loaded").textContent = money(c.loaded);
+$("eq-rej").textContent = money(c.rejected);
+// summed in cents, as reconcile.py does, so float noise cannot show as -0.00
+const resid = Math.round(c.source * 100) - Math.round(c.loaded * 100) - Math.round(c.rejected * 100);
+$("eq-res").textContent = money(resid / 100);
+$("eq-l").style.width = (c.loaded / c.source * 100) + "%";
+$("eq-r").style.width = (c.rejected / c.source * 100) + "%";
+const pct = (a, b) => (a / b * 100).toFixed(1) + "%";
+$("fl-n").textContent = DOC.flagged + " in this run";
+$("fl-right").textContent = pct(DOC.worker_rejected, DOC.worker_source);
+$("fl-wrong").textContent = pct(DOC.worker_rejected + DOC.worker_flagged, DOC.worker_source);
+$("ov-n").textContent = `Rule CMP-008 held ${DOC.overlaps} overlapping periods in this run.`;
+$("cc-n").textContent = `Rule CMP-001 held ${DOC.cascade} payroll rows in this run.`;
+
+/* ---- headings: anchors, and a section per h2 so search can hide whole sections ---- */
+const heads = [...prose.querySelectorAll("h2, h3")];
+heads.forEach(h => {
+  if (!h.id) return;
+  const a = document.createElement("a");
+  a.className = "anchor"; a.href = "#" + h.id; a.textContent = "#";
+  a.setAttribute("aria-label", "Link to this section");
+  h.prepend(a);
+});
+// the introduction above the first h2 is a section too, so search can hide it
+let cur = document.createElement("section");
+const sections = [cur];
+const nodes = [...prose.childNodes];
+prose.prepend(cur);
+nodes.forEach(node => {
+  if (node.nodeType === 1 && node.tagName === "H2"){
+    cur = document.createElement("section");
+    prose.insertBefore(cur, node);
+    sections.push(cur);
+  }
+  if (cur && node !== cur) cur.appendChild(node);
+});
+
+/* ---- contents ---- */
+const toc = $("toc");
+const tocLinks = [];
+heads.forEach(h => {
+  if (!h.id) return;
+  const a = document.createElement("a");
+  a.href = "#" + h.id;
+  a.textContent = h.textContent.replace(/^#/, "").trim();
+  a.dataset.id = h.id;
+  if (h.tagName === "H3"){ a.className = "sub"; a.dataset.parent = h.closest("section")?.querySelector("h2")?.id || ""; }
+  toc.appendChild(a);
+  tocLinks.push(a);
+});
+const overview = document.createElement("a");
+overview.href = "#content"; overview.textContent = "Overview"; overview.dataset.id = "top";
+toc.prepend(overview); tocLinks.unshift(overview);
+
+function setActive(id){
+  const link = tocLinks.find(a => a.dataset.id === id);
+  if (!link) return;
+  const parent = link.classList.contains("sub") ? link.dataset.parent : id;
+  tocLinks.forEach(a => {
+    a.classList.toggle("active", a === link);
+    if (a.classList.contains("sub")) a.classList.toggle("show", a.dataset.parent === parent);
+  });
+}
+// The active entry is the last heading that has scrolled past the top bar.
+function spy(){
+  let id = "top";
+  for (const h of heads) if (h.id && h.getBoundingClientRect().top < 120 && h.offsetParent) id = h.id;
+  setActive(id);
+}
+addEventListener("scroll", spy, {passive:true});
+spy();
+
+/* ---- search ---- */
+const q = $("q"), read = $("q-read");
+function clearMarks(){
+  prose.querySelectorAll("mark").forEach(m => m.replaceWith(document.createTextNode(m.textContent)));
+  prose.normalize();
+}
+function markIn(el, term){
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => n.parentElement.closest("svg, .anchor, button") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  const hits = [];
+  while (walker.nextNode()){
+    const n = walker.currentNode, i = n.nodeValue.toLowerCase().indexOf(term);
+    if (i >= 0) hits.push([n, i]);
+  }
+  hits.forEach(([n, i]) => {
+    const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + term.length);
+    const m = document.createElement("mark"); r.surroundContents(m);
+  });
+}
+let searchTimer;
+q.addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(runSearch, 120); });
+function runSearch(){
+  const term = q.value.trim().toLowerCase();
+  clearMarks();
+  let shown = 0;
+  sections.forEach(s => {
+    const hit = !term || s.textContent.toLowerCase().includes(term);
+    s.hidden = !hit;
+    if (hit) shown++;
+    if (hit && term.length > 1) markIn(s, term);
+    const id = s.querySelector("h2")?.id || "top";
+    tocLinks.forEach(a => { if (a.dataset.id === id || a.dataset.parent === id) a.hidden = !hit; });
+  });
+  $("no-match").classList.toggle("show", term && !shown);
+  read.textContent = term ? `${shown} section${shown === 1 ? "" : "s"} match` : "";
+}
+addEventListener("keydown", e => {
+  if (e.key === "/" && document.activeElement !== q){ e.preventDefault(); q.focus(); }
+  if (e.key === "Escape" && document.activeElement === q){ q.value = ""; runSearch(); q.blur(); }
+});
+
+/* ---- copy buttons on code blocks ---- */
+prose.querySelectorAll("pre").forEach(pre => {
+  const b = document.createElement("button");
+  b.className = "copy"; b.type = "button"; b.textContent = "Copy";
+  b.onclick = async () => {
+    try { await navigator.clipboard.writeText(pre.querySelector("code").textContent); b.textContent = "Copied"; }
+    catch (e) { b.textContent = "Select and copy"; }
+    setTimeout(() => b.textContent = "Copy", 1600);
+  };
+  pre.appendChild(b);
+});
+
+/* ---- contents toggle on narrow screens ---- */
+$("toc-toggle").onclick = () => {
+  const open = $("side").classList.toggle("open");
+  $("toc-toggle").setAttribute("aria-expanded", String(open));
+};
+toc.addEventListener("click", e => {
+  if (e.target.tagName === "A" && matchMedia("(max-width:960px)").matches){
+    $("side").classList.remove("open"); $("toc-toggle").setAttribute("aria-expanded", "false");
+  }
+});
+</script>
+</body>
+</html>

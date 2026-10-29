@@ -3,8 +3,8 @@ A small Markdown to HTML renderer, covering exactly what the README uses.
 
 A dependency would be the obvious answer, but the project's promise is that it
 runs on the standard library alone, and the published page has to be one
-self-contained file. So this handles headings, tables, fenced code, lists,
-emphasis, inline code and links, and nothing else.
+self-contained file. So this handles headings (with ids), tables, fenced code,
+lists, callouts, emphasis, inline code, links and images, and nothing else.
 """
 import html
 import re
@@ -13,6 +13,8 @@ _INLINE = (
     (re.compile(r"`([^`]+)`"), lambda m: f"<code>{html.escape(m.group(1))}</code>"),
     (re.compile(r"\*\*([^*]+)\*\*"), lambda m: f"<strong>{m.group(1)}</strong>"),
     (re.compile(r"(?<!\w)\*([^*\n]+)\*(?!\w)"), lambda m: f"<em>{m.group(1)}</em>"),
+    (re.compile(r"!\[([^\]]*)\]\(([^)]+)\)"),
+     lambda m: f'<img src="{_safe_href(m.group(2))}" alt="{m.group(1)}">'),
     (re.compile(r"\[([^\]]+)\]\(([^)]+)\)"),
      lambda m: f'<a href="{_safe_href(m.group(2))}">{m.group(1)}</a>'),
 )
@@ -47,9 +49,21 @@ def _row(line):
     return cells
 
 
+def _slug(text, seen):
+    """A stable id for a heading, so a contents list and a shared link can
+    point at it. Repeats get a numeric suffix rather than colliding."""
+    base = re.sub(r"[^a-z0-9]+", "-", re.sub(r"<[^>]+>", "", html.unescape(text)).lower()).strip("-")
+    base = base or "section"
+    slug, n = base, 2
+    while slug in seen:
+        slug, n = f"{base}-{n}", n + 1
+    seen.add(slug)
+    return slug
+
+
 def render(md):
     lines = md.split("\n")
-    out, i = [], 0
+    out, i, seen = [], 0, set()
     while i < len(lines):
         line = lines[i]
 
@@ -76,8 +90,17 @@ def render(md):
         m = re.match(r"(#{1,4})\s+(.*)", line)            # heading
         if m:
             lvl = len(m.group(1))
-            out.append(f"<h{lvl}>{_inline(m.group(2))}</h{lvl}>")
+            text = _inline(m.group(2))
+            out.append(f'<h{lvl} id="{_slug(text, seen)}">{text}</h{lvl}>')
             i += 1
+            continue
+
+        if line.startswith(">"):                          # callout
+            block = []
+            while i < len(lines) and lines[i].startswith(">"):
+                block.append(lines[i][1:].strip())
+                i += 1
+            out.append("<blockquote><p>" + _inline(" ".join(block)) + "</p></blockquote>")
             continue
 
         if line.startswith("|") and i + 1 < len(lines) and re.match(r"^\|[\s:|-]+\|?$", lines[i + 1]):
@@ -121,7 +144,7 @@ def render(md):
         # patterns are matched properly rather than by first character.
         def _is_block(ln):
             return (not ln.strip()
-                    or ln.startswith(("|", "#", "```"))
+                    or ln.startswith(("|", "#", "```", ">"))
                     or re.fullmatch(r"-{3,}", ln.strip())
                     or re.fullmatch(r"</?details>|<summary>.*</summary>", ln.strip())
                     or re.match(r"^\s*[-*]\s+", ln)
