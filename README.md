@@ -12,7 +12,7 @@ rebuild from an empty directory takes 0.17 seconds:
 generate 0.03s, migrate 0.06s, export 0.05s, build page 0.02s, reconcile 0.01s
 (validation is timed separately).
 
-> **Publication and data handling:** `src/generate_sources.py` creates synthetic
+> **Publication and data handling:** `pipeline/generate_sources.py` creates synthetic
 > data only. The generated `data/` extracts and `out/` artefacts contain raw
 > records and are ignored by Git; do not replace them with real HR or payroll
 > data in a public checkout. See [SECURITY.md](SECURITY.md) before publishing.
@@ -24,18 +24,18 @@ the three generated pages: the replay (as `index.html` and `control_room.html`),
 repository settings.
 
 ```
-python3 src/generate_sources.py   # build three inconsistent legacy sources
-python3 src/migrate.py            # profile, cleanse, validate, transform, load
-python3 src/reconcile.py          # reconciliation report
-python3 src/validate.py           # independent validity checks
+python3 pipeline/generate_sources.py   # build three inconsistent legacy sources
+python3 pipeline/migrate.py            # profile, cleanse, validate, transform, load
+python3 pipeline/reconcile.py          # reconciliation report
+python3 pipeline/validate.py           # independent validity checks
 ```
 
 Two further steps build a visual replay of the run. They are optional and
 change nothing about the pipeline:
 
 ```
-python3 src/export_viz.py         # export the completed run as JSON
-python3 src/build_viz.py          # render out/control_room.html and out/docs.html
+python3 pipeline/export_viz.py   # export the completed run as JSON
+python3 site/build_viz.py        # render out/control_room.html and out/docs.html
 ```
 
 ## At a glance
@@ -73,7 +73,7 @@ infrastructure. Specifically:
 
 ## Pipeline, start to end
 
-### Stage 1: generate the sources (`src/generate_sources.py`)
+### Stage 1: generate the sources (`pipeline/generate_sources.py`)
 
 Builds three files standing in for three separate legacy systems:
 
@@ -131,7 +131,7 @@ Four date formats are mixed within single columns:
 | DD-Mon-YYYY (`09-Mar-2010`) | 52          | 0                  |
 | Excel serial (`40246`)      | 62          | 0                  |
 
-### Stage 2: stage the raw records (`src/migrate.py`)
+### Stage 2: stage the raw records (`pipeline/migrate.py`)
 
 Every source record is written to `stg_hris_worker`, `stg_payroll` or `stg_org`
 verbatim, as JSON, before anything is validated: 309, 626 and 8 rows
@@ -221,12 +221,12 @@ while iterating the first time, because the manager may appear later in the
 file. The whole set is validated first, then references are resolved against
 the survivors.
 
-### Stage 5: reconcile (`src/reconcile.py`)
+### Stage 5: reconcile (`pipeline/reconcile.py`)
 
 Row counts per entity, rejections by rule, cleansing by rule, a financial
 control total, and four referential integrity checks against the loaded target.
 
-### Stage 6: validate (`src/validate.py`)
+### Stage 6: validate (`pipeline/validate.py`)
 
 30 checks that re-derive every invariant from the database and the source files
 and deliberately do **not** import the pipeline, so a bug shared between the
@@ -297,7 +297,7 @@ varies by programme and by what the client already owns.
 | **Version control and CI**       | Git, plus a GitHub Actions workflow that rebuilds the sources, gates on validate.py and publishes the replay page. | Git, GitHub Actions, Azure DevOps                                                  |
 | **Test data and PII**            | Wholly synthetic. No real people, so no masking is required.                                                       | Delphix, Informatica TDM, Static masking, Restricted tenants                       |
 
-The table is generated from `viz/tools.json`, which is also what the page renders
+The table is generated from `site/assets/tools.json`, which is also what the page renders
 as chips, so the two cannot drift apart.
 
 The step that matters most for interview purposes is the one this project does
@@ -392,9 +392,9 @@ All four return zero:
 
 ## The visual replay
 
-`src/export_viz.py` exports the completed run to `out/run.json`, and
-`src/build_viz.py` injects it into `viz/template.html` to produce a
-self-contained `out/control_room.html` (721 KB; the only external request is
+`pipeline/export_viz.py` exports the completed run to `out/run.json`, and
+`site/build_viz.py` injects it into `site/assets/template.html` to produce a
+self-contained `out/control_room.html` (720 KB; the only external request is
 for the web fonts). CI publishes it as the
 [live replay](https://dinushitj.github.io/hr-migration-sandbox/).
 
@@ -430,8 +430,8 @@ and their figures come from the run rather than being typed in. The checks are
 executed during the build rather than pasted in, so the page cannot show a green
 result from an earlier state of the code.
 
-All three published pages (replay, docs, FAQ) share `viz/base.css` and
-`viz/theme.js`, so they use the same colour tokens and the same light or dark
+All three published pages (replay, docs, FAQ) share `site/assets/base.css` and
+`site/assets/theme.js`, so they use the same colour tokens and the same light or dark
 choice.
 
 The page is generated, never hand-written, so it cannot drift from the run. The
@@ -459,7 +459,7 @@ record. All 848 pair (positions travel with their worker row).
   one testing every pair of text boxes for intersection while accounting for
   clipping ancestors. No overflow, no overlaps. A third probe checks that every
   label inside the flow figure fits its box.
-- **Invariants**: `src/validate.py`, 30 checks re-derived without importing the
+- **Invariants**: `pipeline/validate.py`, 30 checks re-derived without importing the
   pipeline. 29 pass, 1 is a known documented defect, 0 fail.
 - **Deployment gate**: the Pages workflow runs the same validation in CI and
   refuses to publish if any check fails.
@@ -584,28 +584,31 @@ what it proves. Everything stays in the standard library.
 ## Layout
 
 ```
-.github/workflows/pages.yml   CI: rebuild, validate as a gate, publish the replay
-src/generate_sources.py       three inconsistent legacy sources
-src/migrate.py                stage, cleanse, validate, load
-src/reconcile.py              reconciliation report
-src/validate.py               independent validity checks
-src/markdown_lite.py          minimal Markdown renderer for the docs and FAQ pages
-src/export_viz.py             export a completed run to JSON
-src/build_viz.py              render the visual replay and the docs page
-src/build_faq.py              render the FAQ page
-src/site_chrome.py            head, navigation and shared assets for every page
-src/check_contrast.py         WCAG AA contrast check on the colour tokens
-sql/schema.sql                staging, target, audit and quarantine tables
-viz/base.css                  colour tokens and styles shared by all pages
-viz/theme.js                  light and dark toggle shared by all pages
-viz/template.html             replay page template
-viz/docs.html                 documentation page template
-viz/tools.json                production-equivalents table for README and page
-SECURITY.md                   data handling and publication guidance
-data/                         generated sources (ignored by Git)
-out/                          SQLite target, run.json, the three pages (ignored by Git)
+.github/workflows/pages.yml    CI: rebuild, validate as a gate, publish the pages
+pipeline/generate_sources.py   three inconsistent legacy sources
+pipeline/migrate.py            stage, cleanse, validate, load
+pipeline/reconcile.py          reconciliation report
+pipeline/validate.py           independent validity checks
+pipeline/export_viz.py         export a completed run to JSON
+site/build_viz.py              render the visual replay and the docs page
+site/build_faq.py              render the FAQ page
+site/site_chrome.py            head, navigation and shared assets for every page
+site/markdown_lite.py          minimal Markdown renderer for the docs and FAQ pages
+site/check_contrast.py         WCAG AA contrast check on the colour tokens
+site/assets/base.css           colour tokens and styles shared by all pages
+site/assets/theme.js           light and dark toggle shared by all pages
+site/assets/motion.js          scroll reveal shared by all pages
+site/assets/template.html      replay page template
+site/assets/docs.html          documentation page template
+site/assets/tools.json         production-equivalents table for README and page
+sql/schema.sql                 staging, target, audit and quarantine tables
+docs/accessibility-review.md   WCAG 2.1 AA review of the published pages
+FAQ.md                         plain-English explanation, published as faq.html
+SECURITY.md                    data handling and publication guidance
+data/                          generated sources (ignored by Git)
+out/                           SQLite target, run.json, the three pages (ignored by Git)
 ```
 
 Artefact sizes: `hris_workers.csv` 23 KB, `payroll_export.csv` 37 KB,
 `org_hierarchy.xml` 1 KB, `hr_migration.db` 648 KB, `run.json` 637 KB,
-`control_room.html` 721 KB, `docs.html` 79 KB.
+`control_room.html` 720 KB, `docs.html` 79 KB.

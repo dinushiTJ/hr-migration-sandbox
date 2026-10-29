@@ -29,8 +29,8 @@ OUT = ROOT / "out" / "faq.html"
 
 TITLE = "FAQ: HR Data Migration Sandbox"
 
-# Colours, type and the long-form text styles come from viz/base.css, whose
-# tokens src/check_contrast.py holds to 4.5:1 in both themes. Only the column
+# Colours, type and the long-form text styles come from site/assets/base.css, whose
+# tokens site/check_contrast.py holds to 4.5:1 in both themes. Only the column
 # and the footer are specific to this page.
 STYLE = """
 .faq{max-width:46rem; margin:0 auto; padding:56px var(--gutter) 96px}

@@ -9,7 +9,7 @@ validated, mapped into a Workday-shaped target, or quarantined under a numbered 
 __HEAD__
 <style>
 /* Page-specific layout for the replay. Tokens, type, navigation, pills, buttons
-   and cards come from viz/base.css. Spacing sits on an 8px grid: 8, 12, 16,
+   and cards come from site/assets/base.css. Spacing sits on an 8px grid: 8, 12, 16,
    20, 24, 28. */
 
 /* ---------- opening screen ---------- */
@@ -29,9 +29,10 @@ __HEAD__
 .hero .sub{margin-top:24px; font-size:16.5px; max-width:58ch}
 .cta{display:flex; flex-wrap:wrap; gap:12px; margin-top:32px}
 .cta .btn{height:44px; padding:0 22px; font-size:12.5px}
-.stats{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:64px 0 0;
+.stats{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:64px 0 0;
   border-top:1px solid var(--line-strong)}
-.stats > div{padding:20px 24px 0 0; min-width:0}
+.stats > div{padding:20px 24px 0 0; min-width:0; display:flex; flex-direction:column}
+.stats dt{flex:1}
 .stats > div + div{padding-left:24px; border-left:1px solid var(--line)}
 .stats dt{font-family:var(--mono); font-size:11px; font-weight:500; letter-spacing:.12em;
   text-transform:uppercase; color:var(--faint)}
@@ -39,9 +40,8 @@ __HEAD__
   letter-spacing:-.035em; line-height:1; font-variant-numeric:tabular-nums; white-space:nowrap}
 .t-ok{color:var(--ok)} .t-bad{color:var(--bad)}
 @media (max-width:760px){
-  .stats{grid-template-columns:1fr 1fr}
-  .stats > div:nth-child(3){padding-left:0; border-left:0}
-  .stats > div:nth-child(n+3){padding-top:24px}
+  .stats > div{padding-right:12px}
+  .stats > div + div{padding-left:12px}
 }
 
 /* ---------- transport ---------- */
@@ -396,9 +396,7 @@ __NAV__
     <dl class="stats">
       <div><dt>Records in</dt><dd class="num" data-count id="s-in">0</dd></div>
       <div><dt>Rows loaded</dt><dd class="num t-ok" data-count id="s-loaded">0</dd></div>
-      <div><dt>Held in quarantine</dt><dd class="num t-bad" data-count id="s-held">0</dd></div>
-      <div><dt>Residual, NZD</dt><dd class="num t-ok" id="s-res">0.00</dd></div>
-    </dl>
+      <div><dt>Held in quarantine</dt><dd class="num t-bad" data-count id="s-held">0</dd></div>    </dl>
   </section>
 
   <div class="transport" id="replay">
@@ -1140,9 +1138,7 @@ $("search").oninput = ev => { query = ev.target.value.trim().toLowerCase(); rend
    not follow the scrubber. They count up once on load where motion is allowed. */
 const FIN = compute(N);
 const held = Object.values(FIN.ent).reduce((a, b) => a + b.rejected + b.flagged, 0);
-$("h-records").textContent = N.toLocaleString("en-GB");
-$("s-res").textContent = money(FIN.money.src - FIN.money.loaded - FIN.money.rej);
-function countUp(el, to){
+$("h-records").textContent = N.toLocaleString("en-GB");function countUp(el, to){
   const fmt = v => Math.round(v).toLocaleString("en-GB");
   if (!document.documentElement.classList.contains("motion")){ el.textContent = fmt(to); return; }
   const t0 = performance.now() + 450, dur = 1400;

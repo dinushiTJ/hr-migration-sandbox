@@ -11,9 +11,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = "https://github.com/dinushiTJ/hr-migration-sandbox"
-BASE_CSS = ROOT / "viz" / "base.css"
-THEME_JS = ROOT / "viz" / "theme.js"
-MOTION_JS = ROOT / "viz" / "motion.js"
+BASE_CSS = ROOT / "site" / "assets" / "base.css"
+THEME_JS = ROOT / "site" / "assets" / "theme.js"
+MOTION_JS = ROOT / "site" / "assets" / "motion.js"
 
 # Relative links, so the same pages work opened from out/ on disk and served
 # from GitHub Pages, where CI publishes control_room.html under both names.

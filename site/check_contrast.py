@@ -6,7 +6,7 @@ being used at 10px, and the reason they survived that long is that contrast is
 invisible to the person who chose the colours. A number is the only honest way
 to look at it, so this reads the tokens out of the template and computes them.
 
-The token values are parsed from viz/base.css, the stylesheet every published
+The token values are parsed from site/assets/base.css, the stylesheet every published
 page shares, rather than restated here,
 so the check cannot pass against colours the page no longer uses. The pairings
 are declared, because which foreground is drawn on which background is a fact
@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-TEMPLATE = ROOT / "viz" / "base.css"
+TEMPLATE = ROOT / "site" / "assets" / "base.css"
 
 AA_NORMAL = 4.5
 

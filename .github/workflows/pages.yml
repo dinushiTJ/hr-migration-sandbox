@@ -27,23 +27,23 @@ jobs:
           python-version: "3.12"
 
       - name: Generate synthetic sources
-        run: python src/generate_sources.py
+        run: python pipeline/generate_sources.py
 
       - name: Run migration
-        run: python src/migrate.py
+        run: python pipeline/migrate.py
 
       - name: Validate migration
-        run: python src/validate.py
+        run: python pipeline/validate.py
 
       - name: Check colour contrast against WCAG AA
-        run: python src/check_contrast.py
+        run: python site/check_contrast.py
 
       - name: Build replay page and FAQ
         run: |
-          python src/reconcile.py
-          python src/export_viz.py
-          python src/build_viz.py
-          python src/build_faq.py
+          python pipeline/reconcile.py
+          python pipeline/export_viz.py
+          python site/build_viz.py
+          python site/build_faq.py
           mkdir -p _site
           cp out/control_room.html _site/index.html
           cp out/control_room.html _site/control_room.html

@@ -6,7 +6,7 @@
    steel-blue accent for pipeline steps, so where it appears it means something:
      teal  = reached the target       red  = rejected, or broken in the source
      amber = changed, or loaded flagged  blue = a pipeline step
-   src/check_contrast.py parses the hex tokens below and holds every text colour
+   site/check_contrast.py parses the hex tokens below and holds every text colour
    to 4.5:1 on every background, in both themes. */
 :root{
   --paper:#f1eee7; --surface:#f8f6f1; --surface-2:#ebe7de; --ink:#1c1c1a; --muted:#55534e;
@@ -198,7 +198,7 @@ button{font:inherit; cursor:pointer; color:inherit}
 .prose table:not(:has(thead)) td:first-child{white-space:nowrap; color:var(--muted)}
 
 /* ---------- motion ----------
-   Only under html.motion, which viz/motion.js sets when the viewer has not asked
+   Only under html.motion, which site/assets/motion.js sets when the viewer has not asked
    for reduced motion. Without it every element simply renders in place. */
 html.motion{scroll-behavior:smooth}
 .motion .reveal{opacity:0; transform:translateY(16px);

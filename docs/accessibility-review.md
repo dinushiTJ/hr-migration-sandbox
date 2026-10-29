@@ -30,9 +30,9 @@ survived: nothing looked wrong. A screen reader has no such luxury. Without `lan
 falls back to the user's default voice, so an English page can be read with the phoneme
 rules of another language.
 
-Fixed in `viz/template.html` by adding a real document head with `<!doctype html>`,
+Fixed in `site/assets/template.html` by adding a real document head with `<!doctype html>`,
 `<html lang="en">` and `<meta charset="utf-8">`, and closing the document properly. The
-template was a fragment and is now a document. `src/build_viz.py` substitutes strings into
+template was a fragment and is now a document. `site/build_viz.py` substitutes strings into
 it and needed no change.
 
 ### 2. No viewport declaration
@@ -108,14 +108,14 @@ Room", which names the destination.
 ## Making it stay fixed
 
 Contrast is invisible to the person choosing the colours, which is how this defect lasted
-as long as it did. So the fix is enforced rather than remembered: `src/check_contrast.py`
-parses the theme tokens out of `viz/base.css` (the stylesheet all three published pages
+as long as it did. So the fix is enforced rather than remembered: `site/check_contrast.py`
+parses the theme tokens out of `site/assets/base.css` (the stylesheet all three published pages
 now share; it was `viz/template.html` at the time of this review), computes all 42 foreground and
 background pairs across both themes, and exits non-zero if any falls below 4.5:1. It runs
 in `.github/workflows/pages.yml` as a deployment gate, alongside the existing data
 validation, so a colour change that breaks AA fails the build instead of shipping.
 
-`src/build_faq.py` does the same for structure: it fails the build if the FAQ's headings
+`site/build_faq.py` does the same for structure: it fails the build if the FAQ's headings
 do not start at a single `h1` or if any level is skipped.
 
 Both checks were confirmed to fail on purpose before being trusted, by reintroducing the
@@ -130,7 +130,7 @@ Left undone, and listed because the point of a review is the things it found.
    underneath the page's own `<h2>Documentation</h2>`. The levels no longer skip, but the
    nesting misrepresents the outline: a screen reader user navigating by heading meets a
    second `h1` two thirds of the way down the page. The proper fix is for the renderer to
-   demote injected headings by two levels, which means changing `src/markdown_lite.py` to
+   demote injected headings by two levels, which means changing `site/markdown_lite.py` to
    take an offset.
 2. **No keyboard audit.** This review covered structure, text alternatives and contrast,
    which is what it set out to cover. Focus order, focus visibility on every control, and

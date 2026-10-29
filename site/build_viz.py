@@ -17,11 +17,11 @@ from markdown_lite import render as render_markdown
 from site_chrome import head_assets, nav, repo_links
 
 ROOT = Path(__file__).resolve().parent.parent
-TEMPLATE = ROOT / "viz" / "template.html"
-DOCS_TEMPLATE = ROOT / "viz" / "docs.html"
+TEMPLATE = ROOT / "site" / "assets" / "template.html"
+DOCS_TEMPLATE = ROOT / "site" / "assets" / "docs.html"
 RUN = ROOT / "out" / "run.json"
 README = ROOT / "README.md"
-TOOLS = ROOT / "viz" / "tools.json"
+TOOLS = ROOT / "site" / "assets" / "tools.json"
 OUT = ROOT / "out" / "control_room.html"
 DOCS_OUT = ROOT / "out" / "docs.html"
 
@@ -32,7 +32,7 @@ def validation_html():
     Run rather than cached, so the page can never show a green result from an
     earlier state of the code.
     """
-    r = subprocess.run([sys.executable, str(ROOT / "src" / "validate.py")],
+    r = subprocess.run([sys.executable, str(ROOT / "pipeline" / "validate.py")],
                        capture_output=True, text=True)
     lines = []
     for line in (r.stdout or "validity checks did not run").split("\n"):
@@ -48,7 +48,7 @@ def validation_html():
 
 
 def sync_readme_tools():
-    """Rewrite the README's tool table from viz/tools.json.
+    """Rewrite the README's tool table from site/assets/tools.json.
 
     The page renders the same data as chips. Keeping two hand-maintained copies
     is how a reference table quietly goes stale, so there is one source and the
